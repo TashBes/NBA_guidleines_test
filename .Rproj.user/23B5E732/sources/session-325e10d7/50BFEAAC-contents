@@ -44,6 +44,13 @@ threat_status_plot <-function(DAT, X, Y, FILL )
 
 
 }
+
+protection_level_plot <- function() {}
+
+
+ecological_condition <- function() {}
+
+
 #####################################################################################
 ### unload packages
 
