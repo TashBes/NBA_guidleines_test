@@ -24,7 +24,7 @@ require(sf)
 
 ##test
 
-threat_status_plot <-function(DAT, X, Y, FILL )
+thr_efg_plot <-function(DAT, X, Y, FILL )
 
 {
 
@@ -43,15 +43,27 @@ threat_status_plot <-function(DAT, X, Y, FILL )
           panel.grid.major.y = element_line(colour = "grey", size = 0.005))+
     theme(legend.position = "bottom") + ## position the legend to beneath the plot
     coord_flip()  ## flip the orientation of the chart
-  thr_plot
+thr_efg_plot
 
 
 }
 
-protection_level_plot <- function() {}
 
+thr_donut_plot <-function(data, ymax, ymin, fill)
 
-ecological_condition <- function() {}
+{
+
+ ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=Threat_status_2023)) +
+    geom_rect() +
+    geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = Frequency), color = "black", size = 5)+  ## Add this line to include values
+    coord_polar(theta="y") + ## try to remove that to understand how the chart is built initially
+    xlim(c(2, 4)) + ## try to remove that to see how to make a pie chart
+    scale_fill_manual(values = freq_df$Cols, breaks = freq_df$Threat_status_2023) +
+    labs(fill = "Threat Status") +
+    theme_void() ## removes the lines around chart and grey background
+  Thr_donut_plt
+
+}
 
 
 #####################################################################################
