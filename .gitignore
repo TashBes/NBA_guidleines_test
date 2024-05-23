@@ -1,3 +1,7 @@
-data/
 .Rproj.user
 .Rhistory
+<<<<<<< HEAD
+=======
+.Ruserdata
+data/
+>>>>>>> c807037b3c68110c90961a847567cb355a145897
