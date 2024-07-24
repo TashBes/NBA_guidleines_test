@@ -1,40 +1,29 @@
-#######################################################################################
-##
-## Script name: benth_eco_calc.R
-##
-## Purpose of script:
-## To create a standardised template for a table used in the NBA
-##
-## Author: Lauryn Bull
-##
-## Date Created: 2023-03-17
-##
-## Notes:
-## This script is used to create and formualtae a specific table format for majority of tables
+---
+title: "Testing functions"
+format: html
+editor: visual
+---
 
-########################################################################################
-## packages & functions
+# Test of functions to be used in the NBA Quarto
 
+To see if these functions work, I am going to make the tables and graphs and render to see how they come out.
+
+## Basic table
+
+```{r echo=FALSE, message=FALSE}
+
+## load functions
 library(tidyverse)
 library(sf)
 library(kableExtra)
 
-########################################################################################
-### Create example data
-
+## make dummy data
 bird_data <- data.frame(
   Species = c("African Fish Eagle", "Saddle-billed Stork", "Kori Bustard", "Secretary Bird", "Crowned Crane"),
   Habitat = c("Wetland", "Savanna", "Grassland", "Savanna", "Wetland"),
   Status = c("Least Concern", "Near Threatened", "Vulnerable", "Endangered", "Critically Endangered")
 )
 
-land_cover <- data.frame(
-  Land_cover = c("Natural", "Cropland", "Plantation", "Built-up", "Mine", "Artificial water body"),
-  Non_coastal = c(7.9, 16.1, 1.4, 2.0, 0.2, 0.5),
-  Coastal = c(66.7, 22, 4.5, 5.4, 1.1, 0.3)
-)
-
-########################################################################################
 ### Create a formatted table for basic data tables
 
 ## Test table on dataset (This one works)!!! Success!!!
@@ -50,7 +39,10 @@ table_1 <- kable(bird_data, "html", escape = FALSE) %>%
 table_1
 
 
-#### create function
+```
+
+```{r}
+
 basic_tbl <- function(DF){
 
   table_1 <- kable(DF, "html", escape = FALSE) %>%
@@ -67,74 +59,85 @@ basic_tbl <- function(DF){
 
 basic_tbl(bird_data)
 
-########################################################################################
-### Create a formatted table for threat status tables (In progress)
+```
 
-bird_cat <- bird_data %>%
-  mutate(Status = cell_spec(
-    Status,
-    background = case_when(
-      Status == "Least Concern" ~ "#b1d798",
-      Status == "Near Threatened" ~ "#eeeea3",
-      Status == "Vulnerable" ~ "#fff02a",
-      Status == "Endangered" ~ "#f97835",
-      Status == "Critically Endangered" ~ "#e9302c",
-      TRUE ~ "white"
-    ),
-    color = "black",
-    bold = Status == "Critically Endangered",
-    extra_css = "border: 1px solid black; display: block; width: 100%; height: 100%;",
-    background_as_tile = TRUE
-  ))
+## Threat status table
 
-table_2 <- kable(bird_cat, "html", escape = FALSE) %>%
-  kable_styling(
-    bootstrap_options = c("striped", "hover"),
-    full_width = FALSE,
-    position = "center",
-    font_size = 12) %>%
-  column_spec(1:ncol(bird_cat), border_left = TRUE, border_right = TRUE, background = "white") %>%
-  kableExtra::add_header_above(c(" " = ncol(bird_cat)), line = TRUE, line_sep = 3, color = "black")%>%
-  row_spec(0, background = "#899be1", color = "black", bold = TRUE, extra_css = "border: 1px solid black")
-table_2
+```{r echo=FALSE, message=FALSE}
+## load functions
+library(tidyverse)
+library(sf)
+library(kableExtra)
 
-########################################################################################
+## make dummy data
+bird_data <- data.frame(
+  Species = c("African Fish Eagle", "Saddle-billed Stork", "Kori Bustard", "Secretary Bird", "Crowned Crane"),
+  Habitat = c("Wetland", "Savanna", "Grassland", "Savanna", "Wetland"),
+  Status = c("Least Concern", "Near Threatened", "Vulnerable", "Endangered", "Critically Endangered")
+)
+
 ### Troubleshooting above code to get entire cell to be coloured in.
 
 color_cell <- function(status) {
+
   color <- case_when(
+
     status == "Least Concern" ~ "#b1d798",
+
     status == "Near Threatened" ~ "#eeeea3",
+
     status == "Vulnerable" ~ "#fff02a",
+
     status == "Endangered" ~ "#f97835",
+
     status == "Critically Endangered" ~ "#e9302c",
+
     TRUE ~ "white"
+
   )
 
   html <- paste0(
+
     '<div style="background-color:', color, '; color: black; padding: 5px;">',
+
     status, '</div>'
+
   )
 
   return(html)
+
 }
 
 # Apply the HTML function to the Status column
+
 bird_cat <- bird_data %>%
+
   mutate(Status = sapply(Status, color_cell))
 
 table_2.1 <- kable(bird_cat, "html", escape = FALSE) %>%
+
   kable_styling(
+
     bootstrap_options = c("striped", "hover"),
+
     full_width = FALSE,
+
     position = "center",
+
     font_size = 12
+
   ) %>%
+
   column_spec(1:ncol(bird_cat), border_left = TRUE, border_right = TRUE, background = "white") %>%
+
   kableExtra::add_header_above(c(" " = ncol(bird_cat)), line = TRUE, line_sep = 3, color = "black")%>%
   row_spec(0, background = "#899be1", color = "black", bold = TRUE, extra_css = "border: 1px solid black")
+
 table_2.1
 
+```
+
+```{r}
 thr_tbl <- function(DF, COL) {
 
   color_cell <- function(COL) {
@@ -173,13 +176,24 @@ thr_tbl <- function(DF, COL) {
 
 }
 
-pro_tbl(bird_data, Status)
+thr_tbl(bird_data, Status)
 
-########################################################################################
+```
+
+## Protection level table
+
+```{r echo=FALSE, message=FALSE}
 ### Create a formatted table for protection level tables
 library(dplyr)
 library(kableExtra)
 library(htmltools)
+
+## make dummy data
+bird_data <- data.frame(
+  Species = c("African Fish Eagle", "Saddle-billed Stork", "Kori Bustard", "Secretary Bird", "Crowned Crane"),
+  Habitat = c("Wetland", "Savanna", "Grassland", "Savanna", "Wetland"),
+  Status = c("Least Concern", "Near Threatened", "Vulnerable", "Endangered", "Critically Endangered")
+)
 
 # Define the color_cell function
 color_cell <- function(status) {
@@ -213,4 +227,6 @@ table_2.2 <- kable(bird_cat, "html", escape = FALSE) %>%
   row_spec(0, background = "#899be1", color = "black", bold = TRUE, extra_css = "border: 1px solid black")
 table_2.2
 
-########################################################################################
+
+
+```
