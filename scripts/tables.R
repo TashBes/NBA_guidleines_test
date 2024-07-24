@@ -1,37 +1,149 @@
-#####################################################################################
+#######################################################################################
 ##
-## Script name:
+## Script name: benth_eco_calc.R
 ##
 ## Purpose of script:
+## To create a standardised template for a table used in the NBA
 ##
-## Author:
+## Author: Lauryn Bull
 ##
-## Date Created: 202y-mm-dd
-##
+## Date Created: 2023-03-17
 ##
 ## Notes:
-##
-##
-#####################################################################################
-### packages & functions
+## This script is used to create and formualtae a specific table format for majority of tables
 
-# require(tidyverse)
-# require(sf)
-# require(terra)
+########################################################################################
+## packages & functions
 
-# source("functions/packages.R")       # loads up all the packages we need
+library(tidyverse)
+library(sf)
+library(kableExtra)
 
-#####################################################################################
-### settings
+########################################################################################
+### Create example data
 
-### filenames & directories
+bird_data <- data.frame(
+  Species = c("African Fish Eagle", "Saddle-billed Stork", "Kori Bustard", "Secretary Bird", "Crowned Crane"),
+  Habitat = c("Wetland", "Savanna", "Grassland", "Savanna", "Wetland"),
+  Status = c("Least Concern", "Near Threatened", "Vulnerable", "Endangered", "Critically Endangered")
+)
 
-# options(scipen = 6, digits = 4) # prefer non-scientific notation
+########################################################################################
+### Create a formatted table for basic data tables
 
-#####################################################################################
-###
+## Test table on dataset (This one works)!!! Success!!!
+table_1 <- kable(bird_data, "html", escape = FALSE) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 1) %>%
+  row_spec(0, background = "#899be1", color = "black", bold = TRUE, extra_css = "border: 1px solid black") %>% # purple header with black text and black borders
+  column_spec(1:ncol(bird_data), border_left = TRUE, border_right = TRUE, background = "white") %>% # black border around columns
+  add_header_above(c(" " = ncol(bird_data)), line = TRUE, line_sep = 3, color = "black") # black border around header
+table_1
 
-#####################################################################################
-### unload packages
+########################################################################################
+### Create a formatted table for threat status tables (In progress)
 
-# detach("package:xxx", unload=TRUE)
+bird_cat <- bird_data %>%
+  mutate(Status = cell_spec(
+    Status,
+    background = case_when(
+      Status == "Least Concern" ~ "#b1d798",
+      Status == "Near Threatened" ~ "#eeeea3",
+      Status == "Vulnerable" ~ "#fff02a",
+      Status == "Endangered" ~ "#f97835",
+      Status == "Critically Endangered" ~ "#e9302c",
+      TRUE ~ "white"
+    ),
+    color = "black",
+    bold = Status == "Critically Endangered",
+    extra_css = "border: 1px solid black; display: block; width: 100%; height: 100%;",
+    background_as_tile = TRUE
+  ))
+
+table_2 <- kable(bird_cat, "html", escape = FALSE) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 12) %>%
+  column_spec(1:ncol(bird_cat), border_left = TRUE, border_right = TRUE, background = "white") %>%
+  kableExtra::add_header_above(c(" " = ncol(bird_cat)), line = TRUE, line_sep = 3, color = "black")
+table_2
+
+########################################################################################
+### Troubleshooting above code to get entire cell to be coloured in.
+
+color_cell <- function(status) {
+  color <- case_when(
+    status == "Least Concern" ~ "#b1d798",
+    status == "Near Threatened" ~ "#eeeea3",
+    status == "Vulnerable" ~ "#fff02a",
+    status == "Endangered" ~ "#f97835",
+    status == "Critically Endangered" ~ "#e9302c",
+    TRUE ~ "white"
+  )
+
+  html <- paste0(
+    '<div style="background-color:', color, '; color: black; padding: 5px;">',
+    status, '</div>'
+  )
+
+  return(html)
+}
+
+# Apply the HTML function to the Status column
+bird_cat <- bird_data %>%
+  mutate(Status = sapply(Status, color_cell))
+
+table_2.1 <- kable(bird_cat, "html", escape = FALSE) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 12
+  ) %>%
+  column_spec(1:ncol(bird_cat), border_left = TRUE, border_right = TRUE, background = "white") %>%
+  kableExtra::add_header_above(c(" " = ncol(bird_cat)), line = TRUE, line_sep = 3, color = "black")
+table_2.1
+
+########################################################################################
+### Create a formatted table for protection level tables
+library(dplyr)
+library(kableExtra)
+library(htmltools)
+
+# Define the color_cell function
+color_cell <- function(status) {
+  color <- case_when(
+    status == "Least Concern" ~ "#b1d798",
+    status == "Near Threatened" ~ "#eeeea3",
+    status == "Vulnerable" ~ "#fff02a",
+    status == "Endangered" ~ "#f97835",
+    status == "Critically Endangered" ~ "#e9302c",
+    TRUE ~ "white"
+  )
+
+  # Return HTML with inline style
+  sprintf('<div style="background-color:%s; color: black; padding: 5px; height: 100%%;">%s</div>', color, status)
+}
+
+# Apply the function to the Status column
+bird_cat <- bird_data %>%
+  mutate(Status = sapply(Status, color_cell))
+
+# Create the table
+table_2.2 <- kable(bird_cat, "html", escape = FALSE) %>%
+  kable_styling(
+    bootstrap_options = c("striped", "hover"),
+    full_width = FALSE,
+    position = "center",
+    font_size = 12
+  ) %>%
+  column_spec(1:ncol(bird_cat), border_left = TRUE, border_right = TRUE, background = "white") %>%
+  kableExtra::add_header_above(c(" " = ncol(bird_cat)), line = TRUE, line_sep = 3, color = "black")
+table_2.2
+
+########################################################################################
