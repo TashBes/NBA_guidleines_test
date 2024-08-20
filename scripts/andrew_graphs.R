@@ -35,8 +35,11 @@ test <-function(DF, X, Y, FILL, COUNT){
 
   ggplot2::ggplot(dat, aes(y = {{Y}}, x = {{X}}, fill = FILL)) +
     ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-    ggplot2::geom_text(aes(label = {{COUNT}}), position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
-                       size = 3, color = "black", show.legend = FALSE) + # adjust size of labels with no legend being shown
+    ggplot2::geom_text(aes(label = {{COUNT}}),
+                       position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
+                       size = 3,
+                       color = "black",
+                       show.legend = FALSE) + # adjust size of labels with no legend being shown
     ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
     ggplot2::ylab("Percentage of ecosystem functional types") +
     ggplot2::xlab("") + ## remove the heading for the y-axis
@@ -52,6 +55,7 @@ test <-function(DF, X, Y, FILL, COUNT){
                    plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
                    plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
     ggplot2::coord_flip()  # flip the orientation of the chart
+
 }
 
 test.1 <-function(DF, X, Y, FILL, COUNT) {
@@ -83,11 +87,20 @@ test.1 <-function(DF, X, Y, FILL, COUNT) {
     ggplot2::coord_flip()
 }
 
+
+test.2 <- function(DF,YEAR, RLI, min, max){
+  ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}})) +
+    ggplot2::geom_line(aes(y = {{RLI}})) +
+    ggplot2::geom_ribbon(aes(ymin = {{min}}, ymax = {{max}}),alpha = .3, colour = NA)+
+    ggplot2::theme_classic()+
+    ggplot2::ylim(0.7,1)
+
+}
 #####################################################################################
 ###
 ### fig 1.a
 
-Fig1a_graph <- read_excel(
+Fig1a <- read_excel(
       dir("data",
           "Fig1a_graph.xlsx",
           full.names = T,
@@ -96,13 +109,13 @@ Fig1a_graph <- read_excel(
   mutate(threat_precentage = (num_ecos/TOT)*100) %>%
   mutate(across(num_ecos, ~na_if(., 0)))
 
-test(Fig1a_graph, `OVERALL types`,threat_precentage, threat_status, num_ecos)
+test(Fig1a, `OVERALL types`,threat_precentage, threat_status, num_ecos)
 
 
 ###
 ### fig 1.b
 
-Fig1b_graph <- read_excel(
+Fig1b <- read_excel(
   dir("data",
       "Fig1b_graph.xlsx",
       full.names = T,
@@ -112,26 +125,145 @@ Fig1b_graph <- read_excel(
   mutate(TOT = sum(num_spp), .by = OVERALL_types )%>%
   mutate(threat_precentage = (num_spp/TOT)*100)
 
-test(Fig1b_graph, OVERALL_types, threat_precentage, `Red List Category`, num_spp)
+test(Fig1b, OVERALL_types, threat_precentage, `Red List Category`, num_spp)
 
 ###
 ### fig 1.c
 
-Fig1c_graph <- read_excel(
+Fig1c <- read_excel(
   dir("data",
       "Fig1c_graph updated.xlsx",
       full.names = T,
-      recursive = T),
-  sheet ="Sheet1")%>%
+      recursive = T))%>%
+  slice_head(n =8) %>%
+  mutate(across(2:5, as.numeric))%>%
   pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
   mutate(pro_precentage = (num_ecos/TOT)*100) %>%
   mutate(across(num_ecos, ~na_if(., 0)))
 
 
-test.1(Fig1c_graph, `OVERALL types`, pro_precentage, pro_level, num_ecos)
+test.1(Fig1c, `OVERALL types`, pro_precentage, pro_level, num_ecos)
+
+
+###
+### fig 1.d
+
+Fig1d <- read_excel(
+  dir("data",
+      "Fig1d_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  pivot_longer(2:8, names_to = "OVERALL_types", values_to = "num_spp")%>%
+  mutate(TOT = sum(num_spp), .by = OVERALL_types )%>%
+  mutate(pro_precentage = (num_spp/TOT)*100)
+
+
+test.1(Fig1d, OVERALL_types, pro_precentage, `...1`, num_spp)
+
+
+###
+### Fig4a
+
+Fig4a <- read_excel(
+  dir("data",
+      "Fig4a_graph.xlsx",
+      full.names = T,
+      recursive = T)) %>%
+  slice_head(n =8) %>%
+  mutate(across(2:6, as.numeric))%>%
+  pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
+  mutate(thr_precentage = (num_ecos/TOT)*100)%>%
+  mutate(across(num_ecos, ~na_if(., 0)))
+
+
+p <- test(Fig4a, `OVERALL types`, thr_precentage, threat_status, num_ecos)
+
+p +
+  annotate("rect", xmin =1.5, xmax = 2.5, ymin = -1, ymax = 86.5,alpha = 0, color= "black",linewidth = 1.5)+
+  annotate("rect", xmin =7.5, xmax = 8.5, ymin = -1, ymax = 79,alpha = 0, color= "black",linewidth = 1.5)
+
+
+###
+### Fig4b
+
+Fig4b <- read_excel(
+  dir("data",
+      "Fig4b_graph updated.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =8) %>%
+  mutate(across(2:6, as.numeric))%>%
+  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
+  mutate(pro_precentage = (num_ecos/`...6`)*100)%>%
+  mutate(across(num_ecos, ~na_if(., 0)))
+
+
+p <- test.1(Fig4b, `OVERALL types`, pro_precentage, pro_level, num_ecos)
+
+p +
+  annotate("rect", xmin =1.5, xmax = 2.5, ymin = -1, ymax = 19,alpha = 0, color= "black",linewidth = 1.5)+
+  annotate("rect", xmin =7.5, xmax = 8.5, ymin = -1, ymax = 6,alpha = 0, color= "black",linewidth = 1.5)
+
+
+###
+### Fig6
+
+Fig6 <- read_excel(
+  dir("data",
+      "Fig6_graph_part.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  select(-c(5:6))
+
+test.2(Fig6, Years, RLI, min, max)
+
+
+###
+### Fig21
+
+## no idea how to do this or what it is
+
+###
+### Fig23abc
+
+Fig23abc <- read_excel(
+  dir("data",
+      "Fig23abc_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  pivot_longer(2:9, names_to = "year") %>%
+  na.omit()
+# %>%
+#   pivot_wider(names_from =`MAINLAND EEZ`)
+
+
+a <- Fig23abc %>%
+  filter(`MAINLAND EEZ`%in% c("MPAs as a proprtion of the mainland EEZ","Overall prop. MPA contributing to targets")) %>%
+  mutate(value = value*100)%>%
+  ggplot(aes(x = year, y = value, colour = `MAINLAND EEZ`, group =`MAINLAND EEZ`))+
+  geom_line()
+
+b <- Fig23abc %>%
+  filter(`MAINLAND EEZ`%in% c("PAs as a proprtion of the mainland","Overall prop. PA contributing to targets")) %>%
+  mutate(value = value*100)%>%
+  ggplot(aes(x = year, y = value, colour = `MAINLAND EEZ`, group =`MAINLAND EEZ`))+
+  geom_line()
+b
+
+c <- Fig23abc %>%
+  filter(`MAINLAND EEZ`%in% c("MPAs as a proprtion of the mainland EEZ","Overall prop. MPA contributing to targets")) %>%
+  mutate(value = value*100)%>%
+  ggplot(aes(x = year, y = value, colour = `MAINLAND EEZ`, group =`MAINLAND EEZ`))+
+  geom_line()
+c
 
 
 
+
+library("cowplot")
+plot_grid(bxp, dp, bp + rremove("x.text"),
+          labels = c("A", "B", "C"),
+          ncol = 2, nrow = 2)
 
 #####################################################################################
 ### unload packages
