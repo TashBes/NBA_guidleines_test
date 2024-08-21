@@ -105,8 +105,10 @@ Fig1a <- read_excel(
           "Fig1a_graph.xlsx",
           full.names = T,
           recursive = T))%>%
+  slice_head(n =8) %>%
+  mutate(across(2:6, as.numeric))%>%
   pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
-  mutate(threat_precentage = (num_ecos/TOT)*100) %>%
+  mutate(threat_precentage = (num_ecos/TOT)*100)%>%
   mutate(across(num_ecos, ~na_if(., 0)))
 
 test(Fig1a, `OVERALL types`,threat_precentage, threat_status, num_ecos)
@@ -138,7 +140,7 @@ Fig1c <- read_excel(
   slice_head(n =8) %>%
   mutate(across(2:5, as.numeric))%>%
   pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
-  mutate(pro_precentage = (num_ecos/TOT)*100) %>%
+  mutate(pro_precentage = (num_ecos/...6)*100) %>%
   mutate(across(num_ecos, ~na_if(., 0)))
 
 
@@ -230,39 +232,110 @@ Fig23abc <- read_excel(
   dir("data",
       "Fig23abc_graph.xlsx",
       full.names = T,
-      recursive = T))%>%
-  pivot_longer(2:9, names_to = "year") %>%
-  na.omit()
-# %>%
-#   pivot_wider(names_from =`MAINLAND EEZ`)
+      recursive = T))
 
 
 a <- Fig23abc %>%
-  filter(`MAINLAND EEZ`%in% c("MPAs as a proprtion of the mainland EEZ","Overall prop. MPA contributing to targets")) %>%
+  slice(1:5) %>%
+  pivot_longer(2:9, names_to = "year") %>%
+  mutate(year = as.numeric(year))%>%
+  filter(`MAINLAND EEZ`%in% c("MPAs as a proprtion of the mainland EEZ","Overall prop. PA contributing to targets")) %>%
   mutate(value = value*100)%>%
-  ggplot(aes(x = year, y = value, colour = `MAINLAND EEZ`, group =`MAINLAND EEZ`))+
-  geom_line()
+  pivot_wider(names_from =`MAINLAND EEZ` ) %>%
+  ggplot(aes(x = year))+
+  geom_line(aes(y = `MPAs as a proprtion of the mainland EEZ`),
+            show.legend =F,
+            linewidth = 1,
+            colour = "lightblue")+
+  geom_line(aes(y = `Overall prop. PA contributing to targets`),
+            show.legend =F,
+            linewidth = 1,
+            colour = "black",
+            linetype = "dashed")+
+  labs(y = "", x = "")+
+  geom_hline(yintercept=10,
+             linetype="dashed",
+             color = "green",
+             linewidth = 1.5)+
+  annotate("text", x=2005, y=12, label="Aichi 10% target")+
+  ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"),
+                              limits = c(0,40),
+                              expand = c(0, 0))+
+  theme(panel.background = element_blank(),
+        axis.line.x = element_line(colour = "grey"),
+        panel.grid.major.y = element_line(colour = "grey"))
+a
+
 
 b <- Fig23abc %>%
+  slice(17:19) %>%
+  pivot_longer(2:9, names_to = "year") %>%
+  mutate(year = as.numeric(year))%>%
   filter(`MAINLAND EEZ`%in% c("PAs as a proprtion of the mainland","Overall prop. PA contributing to targets")) %>%
   mutate(value = value*100)%>%
-  ggplot(aes(x = year, y = value, colour = `MAINLAND EEZ`, group =`MAINLAND EEZ`))+
-  geom_line()
+  pivot_wider(names_from =`MAINLAND EEZ` )%>%
+  ggplot(aes(x = year))+
+  geom_line(aes(y = `PAs as a proprtion of the mainland`),
+            show.legend =F,
+            linewidth = 1,
+            colour = "darkblue")+
+  geom_line(aes(y = `Overall prop. PA contributing to targets`),
+            show.legend =F,
+            linewidth = 1,
+            colour = "black",
+            linetype = "dashed")+
+  labs(y = "", x = "")+
+  geom_hline(yintercept=17,
+             linetype="dashed",
+             color = "lightblue",
+             linewidth = 1.5)+
+  annotate("text", x=2005, y=12, label="Aichi 17% target")+
+  ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"),
+                              limits = c(0,40),
+                              expand = c(0, 0))+
+  theme(panel.background = element_blank(),
+        axis.line.x = element_line(colour = "grey"),
+        panel.grid.major.y = element_line(colour = "grey"))
 b
 
+
 c <- Fig23abc %>%
-  filter(`MAINLAND EEZ`%in% c("MPAs as a proprtion of the mainland EEZ","Overall prop. MPA contributing to targets")) %>%
+  slice(10:12) %>%
+  pivot_longer(2:9, names_to = "year") %>%
+  mutate(year = as.numeric(year))%>%
+  filter(`MAINLAND EEZ`%in% c("PEI MPA as proportion of PEI EEZ",
+                              "PEI prop. PA contributing to targets")) %>%
   mutate(value = value*100)%>%
-  ggplot(aes(x = year, y = value, colour = `MAINLAND EEZ`, group =`MAINLAND EEZ`))+
-  geom_line()
+  pivot_wider(names_from =`MAINLAND EEZ` )%>%
+  ggplot(aes(x = year))+
+  geom_line(aes(y = `PEI MPA as proportion of PEI EEZ`),
+            show.legend =F,
+            linewidth = 1,
+            colour = "darkgrey")+
+  geom_line(aes(y = `PEI prop. PA contributing to targets`),
+            show.legend =F,
+            linewidth = 1,
+            colour = "black",
+            linetype = "dashed")+
+  labs(y = "", x = "")+
+  geom_hline(yintercept=10,
+             linetype="dashed",
+             color = "black",
+             linewidth = 1.5)+
+  annotate("text", x=2005, y=12, label="Aichi 10% target")+
+  ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"),
+                              limits = c(0,40),
+                              expand = c(0, 0))+
+  theme(panel.background = element_blank(),
+        axis.line.x = element_line(colour = "grey"),
+        panel.grid.major.y = element_line(colour = "grey"))
 c
 
-
-
-
 library("cowplot")
-plot_grid(bxp, dp, bp + rremove("x.text"),
-          labels = c("A", "B", "C"),
+plot_grid(b, a, c,
+          labels = c("(a)", "(b)", "(c)"),
+          label_size = 8,
+          label_fontface = "plain",
           ncol = 2, nrow = 2)
 
 #####################################################################################
