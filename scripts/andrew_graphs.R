@@ -18,30 +18,39 @@
 require(tidyverse)
 library(readxl)
 library(NBA.package)
+library("cowplot")
 
 # source("functions/packages.R")       # loads up all the packages we need
 #devtools::install_github("TashBes/NBA.package")
 #####################################################################################
 ### functions
 
-test <-function(DF, X, Y, FILL, COUNT){
+test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
 
-  cols <- c("#e9302c", "#f97835", "#fff02a", "#eeeea3", "#b1d798")
-  breaks <- c( "Critically Endangered", "Endangered","Vulnerable","Near Threatened","Least Concern")
+  cols <- c("black","#e9302c", "#f97835", "#fff02a", "#eeeea3","brown","grey" , "#b1d798")
+  breaks <- c("Extinct", "Critically Endangered", "Endangered","Vulnerable","Near Threatened", "Data Deficient", "Rare", "Least Concern")
 
 
   dat <- DF %>%
-    mutate(FILL = factor({{FILL}}, levels = breaks))
+    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+    mutate(across(COUNT, ~na_if(., 0))) %>%
+    mutate(FILL = factor(FILL, levels = breaks))
 
-  ggplot2::ggplot(dat, aes(y = {{Y}}, x = {{X}}, fill = FILL)) +
+
+
+  if(TYP == "FG"){
+
+  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = `OVERALL types`, fill = FILL)) +
     ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-    ggplot2::geom_text(aes(label = {{COUNT}}),
+    ggplot2::geom_text(aes(label = COUNT),
                        position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
                        size = 3,
                        color = "black",
                        show.legend = FALSE) + # adjust size of labels with no legend being shown
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-    ggplot2::ylab("Percentage of ecosystem functional types") +
+    ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
+    ggplot2::ylab("Percentage of ecosystem types") +
     ggplot2::xlab("") + ## remove the heading for the y-axis
     ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
     ggplot2::labs(fill = "") + ## change the legend title here
@@ -55,38 +64,141 @@ test <-function(DF, X, Y, FILL, COUNT){
                    plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
                    plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
     ggplot2::coord_flip()  # flip the orientation of the chart
+  }
 
-}
+  else {
 
-test.1 <-function(DF, X, Y, FILL, COUNT) {
+    if(TYP == "EXT"){
+
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+        ggplot2::ylab("Percentage of ecosystem extent") +
+        ggplot2::xlab("") + ## remove the heading for the y-axis
+        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+        ggplot2::labs(fill = "") + ## change the legend title here
+        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+        ggplot2::theme_minimal() +
+        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                       axis.line = element_blank(), # remove all x-axis grid lines
+                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                       legend.text = element_text(size = 8), # change legend text size
+                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+        ggplot2::coord_flip()  # flip the orientation of the chart
+    }
+
+      else {
+
+        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+          ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+          ggplot2::ylab("Percentage of Taxa") +
+          ggplot2::xlab("") + ## remove the heading for the y-axis
+          ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+          ggplot2::labs(fill = "") + ## change the legend title here
+          ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+          ggplot2::theme_minimal() +
+          ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                         panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                         axis.line = element_blank(), # remove all x-axis grid lines
+                         panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                         legend.text = element_text(size = 8), # change legend text size
+                         plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                         plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+          ggplot2::coord_flip()  # flip the orientation of the chart
+
+      }
+
+  }
+  }
+
+test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
   cols <- c("#466a31","#80a952","#d5dec3","#a4a3a3")
   breaks <- c("Well Protected","Moderately Protected","Poorly Protected","No Protection")
 
   dat <- DF %>%
-    mutate(FILL = factor({{FILL}}, levels = breaks))
+    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+    mutate(across(COUNT, ~na_if(., 0))) %>%
+    mutate(FILL = factor(FILL, levels = breaks))
 
-  ggplot2::ggplot(dat, aes(y = {{Y}}, x = {{X}}, fill = FILL)) +
-    ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + ## change width of bars
-    ggplot2::geom_text(aes(label = {{COUNT}}), position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
-                       size = 3, color = "black", show.legend = FALSE) + # adjust size of labels with no legend being shown
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-    ggplot2::ylab("Percentage of ecosystem functional types") +
-    ggplot2::xlab("") +
-    ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-    ggplot2::labs(fill = "") + # change the legend title
-    ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-    ggplot2::theme_minimal() + # create a black bounding box around the plot
-    ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                   panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                   axis.line = element_blank(), # remove all x-axis grid lines from
-                   panel.grid.major.y = element_blank(), # include the horizontal grid line on 1st , 3rd and 5 ... x-axis
-                   legend.text = element_text(size = 8),
-                   plot.background = element_rect(color = "black", fill = NA),  # add black border around the entire plot
-                   plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-    ggplot2::coord_flip()
+  if(TYP == "FG"){
+
+    ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+      ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+      ggplot2::geom_text(aes(label = COUNT),
+                         position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
+                         size = 3,
+                         color = "black",
+                         show.legend = FALSE) + # adjust size of labels with no legend being shown
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+      ggplot2::ylab("Percentage of ecosystem types") +
+      ggplot2::xlab("") + ## remove the heading for the y-axis
+      ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+      ggplot2::labs(fill = "") + ## change the legend title here
+      ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+      ggplot2::theme_minimal() +
+      ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                     panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                     axis.line = element_blank(), # remove all x-axis grid lines
+                     panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                     legend.text = element_text(size = 8), # change legend text size
+                     plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                     plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+      ggplot2::coord_flip()  # flip the orientation of the chart
+  }
+
+  else {
+
+    if(TYP == "EXT"){
+
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+        ggplot2::ylab("Percentage of ecosystem extent") +
+        ggplot2::xlab("") + ## remove the heading for the y-axis
+        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+        ggplot2::labs(fill = "") + ## change the legend title here
+        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+        ggplot2::theme_minimal() +
+        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                       axis.line = element_blank(), # remove all x-axis grid lines
+                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                       legend.text = element_text(size = 8), # change legend text size
+                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+        ggplot2::coord_flip()  # flip the orientation of the chart
+    }
+
+    else {
+
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+        ggplot2::ylab("Percentage of taxa") +
+        ggplot2::xlab("") + ## remove the heading for the y-axis
+        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+        ggplot2::labs(fill = "") + ## change the legend title here
+        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+        ggplot2::theme_minimal() +
+        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                       axis.line = element_blank(), # remove all x-axis grid lines
+                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                       legend.text = element_text(size = 8), # change legend text size
+                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+        ggplot2::coord_flip()  # flip the orientation of the chart
+
+    }
+
+  }
 }
-
 
 test.2 <- function(DF,YEAR, RLI, min, max){
   ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}})) +
@@ -96,6 +208,95 @@ test.2 <- function(DF,YEAR, RLI, min, max){
     ggplot2::ylim(0.7,1)
 
 }
+
+
+test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
+
+  cols <- c("#6e9fd4","#a5c5c7","#81aba7","#88814e")
+  breaks <- c("Natural/near-natural","Moderately modified","Severely/critically modified")
+
+  dat <- DF %>%
+    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+    mutate(across(COUNT, ~na_if(., 0))) %>%
+    mutate(FILL = factor(FILL, levels = breaks))
+
+  if(TYP == "FG"){
+
+    ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+      ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+      ggplot2::geom_text(aes(label = COUNT),
+                         position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
+                         size = 3,
+                         color = "black",
+                         show.legend = FALSE) + # adjust size of labels with no legend being shown
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+      ggplot2::ylab("Percentage of ecosystem types") +
+      ggplot2::xlab("") + ## remove the heading for the y-axis
+      ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+      ggplot2::labs(fill = "") + ## change the legend title here
+      ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+      ggplot2::theme_minimal() +
+      ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                     panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                     axis.line = element_blank(), # remove all x-axis grid lines
+                     panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                     legend.text = element_text(size = 8), # change legend text size
+                     plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                     plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+      ggplot2::coord_flip()  # flip the orientation of the chart
+  }
+
+  else {
+
+    if(TYP == "EXT"){
+
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+        ggplot2::ylab("Percentage of ecosystem extent") +
+        ggplot2::xlab("") + ## remove the heading for the y-axis
+        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+        ggplot2::labs(fill = "") + ## change the legend title here
+        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+        ggplot2::theme_minimal() +
+        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                       axis.line = element_blank(), # remove all x-axis grid lines
+                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                       legend.text = element_text(size = 8), # change legend text size
+                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+        ggplot2::coord_flip()  # flip the orientation of the chart
+    }
+
+    else {
+
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+        ggplot2::ylab("Percentage of taxa") +
+        ggplot2::xlab("") + ## remove the heading for the y-axis
+        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+        ggplot2::labs(fill = "") + ## change the legend title here
+        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+        ggplot2::theme_minimal() +
+        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                       axis.line = element_blank(), # remove all x-axis grid lines
+                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                       legend.text = element_text(size = 8), # change legend text size
+                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+        ggplot2::coord_flip()  # flip the orientation of the chart
+
+    }
+
+  }
+}
+
+
 #####################################################################################
 ###
 ### fig 1.a
@@ -106,12 +307,9 @@ Fig1a <- read_excel(
           full.names = T,
           recursive = T))%>%
   slice_head(n =8) %>%
-  mutate(across(2:6, as.numeric))%>%
-  pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
-  mutate(threat_precentage = (num_ecos/TOT)*100)%>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:6, as.numeric))
 
-test(Fig1a, `OVERALL types`,threat_precentage, threat_status, num_ecos)
+test(Fig1a, `OVERALL types`, 2:5,  TYP = "FG")
 
 
 ###
@@ -121,13 +319,13 @@ Fig1b <- read_excel(
   dir("data",
       "Fig1b_graph.xlsx",
       full.names = T,
-      recursive = T))%>%
-  pivot_longer(2:9, names_to = "OVERALL_types", values_to = "num_spp") %>%
-  na.omit() %>%
-  mutate(TOT = sum(num_spp), .by = OVERALL_types )%>%
-  mutate(threat_precentage = (num_spp/TOT)*100)
+      recursive = T)) %>%
+  slice_head(n =4) %>%
+  pivot_longer(2:9, names_to = "OVERALL_types") %>%
+  pivot_wider(names_from = `Red List Category`)
 
-test(Fig1b, OVERALL_types, threat_precentage, `Red List Category`, num_spp)
+
+test(Fig1b, OVERALL_types, 2:5,  TYP = "SPP")
 
 ###
 ### fig 1.c
@@ -138,13 +336,10 @@ Fig1c <- read_excel(
       full.names = T,
       recursive = T))%>%
   slice_head(n =8) %>%
-  mutate(across(2:5, as.numeric))%>%
-  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
-  mutate(pro_precentage = (num_ecos/...6)*100) %>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:5, as.numeric))
 
 
-test.1(Fig1c, `OVERALL types`, pro_precentage, pro_level, num_ecos)
+test.1(Fig1c, `OVERALL types`, 2:5,  TYP = "FG")
 
 
 ###
@@ -155,12 +350,12 @@ Fig1d <- read_excel(
       "Fig1d_graph.xlsx",
       full.names = T,
       recursive = T))%>%
-  pivot_longer(2:8, names_to = "OVERALL_types", values_to = "num_spp")%>%
-  mutate(TOT = sum(num_spp), .by = OVERALL_types )%>%
-  mutate(pro_precentage = (num_spp/TOT)*100)
+  pivot_longer(2:8, names_to = "OVERALL_types") %>%
+  pivot_wider(names_from = `...1`)
 
 
-test.1(Fig1d, OVERALL_types, pro_precentage, `...1`, num_spp)
+
+test.1(Fig1d, OVERALL_types, 2:5, TYP = "SPP")
 
 
 ###
@@ -172,13 +367,11 @@ Fig4a <- read_excel(
       full.names = T,
       recursive = T)) %>%
   slice_head(n =8) %>%
-  mutate(across(2:6, as.numeric))%>%
-  pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
-  mutate(thr_precentage = (num_ecos/TOT)*100)%>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:6, as.numeric))
 
 
-p <- test(Fig4a, `OVERALL types`, thr_precentage, threat_status, num_ecos)
+
+p <- test(Fig4a, `OVERALL types`,2:5, TYP = "FG")
 
 p +
   annotate("rect", xmin =1.5, xmax = 2.5, ymin = -1, ymax = 86.5,alpha = 0, color= "black",linewidth = 1.5)+
@@ -194,13 +387,10 @@ Fig4b <- read_excel(
       full.names = T,
       recursive = T))%>%
   slice_head(n =8) %>%
-  mutate(across(2:6, as.numeric))%>%
-  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
-  mutate(pro_precentage = (num_ecos/`...6`)*100)%>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:6, as.numeric))
 
 
-p <- test.1(Fig4b, `OVERALL types`, pro_precentage, pro_level, num_ecos)
+p <- test.1(Fig4b, `OVERALL types`, 2:5, TYP = "FG")
 
 p +
   annotate("rect", xmin =1.5, xmax = 2.5, ymin = -1, ymax = 19,alpha = 0, color= "black",linewidth = 1.5)+
@@ -235,11 +425,13 @@ Fig23abc <- read_excel(
       recursive = T))
 
 
+#test.3 <- function(DF, ROWS, YR_COLS, NM_COL,  )
+
+
 a <- Fig23abc %>%
   slice(1:5) %>%
   pivot_longer(2:9, names_to = "year") %>%
   mutate(year = as.numeric(year))%>%
-  filter(`MAINLAND EEZ`%in% c("MPAs as a proprtion of the mainland EEZ","Overall prop. PA contributing to targets")) %>%
   mutate(value = value*100)%>%
   pivot_wider(names_from =`MAINLAND EEZ` ) %>%
   ggplot(aes(x = year))+
@@ -331,12 +523,220 @@ c <- Fig23abc %>%
         panel.grid.major.y = element_line(colour = "grey"))
 c
 
-library("cowplot")
+
 plot_grid(b, a, c,
           labels = c("(a)", "(b)", "(c)"),
           label_size = 8,
           label_fontface = "plain",
           ncol = 2, nrow = 2)
+
+
+###
+### Fig27
+
+Fig27 <- read_excel(
+  dir("data",
+      "Fig27_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =7)%>%
+  mutate(across(2:5, as.numeric))
+
+
+test.3(Fig27,`...1`, 2:4, TYP = "EXT")
+
+
+###
+### Fig28ab
+
+Fig28ab <- read_excel(
+  dir("data",
+      "Fig28ab_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+FG <- Fig28ab%>%
+  slice_head(n =8)%>%
+  mutate(across(2:6, as.numeric))
+
+EXT <- Fig28ab%>%
+  slice(11:18)%>%
+  mutate(across(2:6, as.numeric))
+
+a <- test(FG,`OVERALL types`, 2:5, TYP = "FG" )
+b <- test(EXT,`OVERALL types`, 2:5, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2, nrow = 2)
+
+
+
+
+###
+### Fig30
+
+Fig30 <- read_excel(
+  dir("data",
+      "Fig30_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  rename(Extinct = Extinct...2,
+         `Critically Endangered` = `Critically Endangered...3`,
+         Endangered = Endangered...4,
+         Vulnerable = Vulnerable...5,
+         `Near Threatened` = `Near Threatened...6`,
+         `Data Deficient` = `Data Deficient...7`,
+         `Rare` = `Rare...8`,
+         `Least Concern` = `Least Concern...9`) %>%
+  select(1:10) %>%
+  # slice_head(n =7)%>%
+  # mutate(across(2:5, as.numeric))%>%
+  pivot_longer(2:9, names_to = "thr_status", values_to = "num_spp")%>%
+  mutate(thr_precentage = (num_spp/`...10`)*100)%>%
+  mutate(across(num_spp, ~na_if(., 0)))
+
+test(Fig30,Realm, thr_precentage, thr_status, num_spp, TYP = "SPP")
+
+
+###
+### Fig33a
+
+Fig33a <- read_excel(
+  dir("data",
+      "Fig33a_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+test.2(Fig33a,Years, RLI, min, max)
+
+###
+### Fig33b
+
+Fig33b <- read_excel(
+  dir("data",
+      "Fig33b_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+test.2(Fig33b,Years, RLI, min, max)
+
+###
+### Fig34ab
+
+Fig34ab <- read_excel(
+  dir("data",
+      "Fig34ab_graph updated.xlsx",
+      full.names = T,
+      recursive = T))
+
+FG <- Fig34ab%>%
+  slice_head(n =8)%>%
+  mutate(across(2:6, as.numeric))%>%
+  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
+  mutate(pro_precentage = (num_ecos/`...6`)*100)%>%
+  mutate(across(num_ecos, ~na_if(., 0)))
+
+EXT <- Fig34ab%>%
+  slice(11:18)%>%
+  mutate(across(2:6, as.numeric))%>%
+  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
+  mutate(pro_precentage = (num_ecos/`...6`)*100)%>%
+  mutate(across(num_ecos, ~na_if(., 0)))
+
+a <- test.1(FG,`OVERALL types`, pro_precentage, pro_level, num_ecos, TYP = "FG" )
+b <- test.1(EXT,`OVERALL types`, pro_precentage, pro_level, num_ecos, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2, nrow = 2)
+
+##
+###Fig36ab_graph 8wx7h
+
+## just has diff x axis label, maybe should make that adjustable?
+
+
+###
+### Fig40ab
+
+Fig40ab <- read_excel(
+  dir("data",
+      "Fig40ab_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+FG <- Fig40ab%>%
+  slice_head(n =11)%>%
+  mutate(across(2:6, as.numeric))%>%
+  pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
+  mutate(thr_precentage = (num_ecos/TOT)*100)%>%
+  mutate(across(num_ecos, ~na_if(., 0)))
+
+EXT <- Fig40ab%>%
+  slice(14:24)%>%
+  mutate(across(2:6, as.numeric))%>%
+  pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
+  mutate(thr_precentage = (num_ecos/TOT)*100)%>%
+  mutate(across(num_ecos, ~na_if(., 0)))
+
+a <- test(FG,`TERR types`, thr_precentage, threat_status, num_ecos, TYP = "FG" )
+b <- test(EXT,`TERR types`, thr_precentage, threat_status, num_ecos, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2, nrow = 2)
+
+
+###
+### Fig42
+
+Fig42 <- read_excel(
+  dir("data",
+      "Fig42_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =11)%>%
+  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
+  mutate(TOT = sum(num_ecos, na.rm = T), .by = `TERR types` )%>%
+  mutate(pro_precentage = (num_ecos/TOT)*100)
+
+test.1(Fig42,`TERR types`, pro_precentage, pro_level, num_ecos, TYP = "FG" )
+
+
+
+###
+### Fig44ab
+
+## need to look at x labs (endemic taxa)
+
+###
+### Fig48ab
+
+
+
+Fig48ab <- read_excel(
+  dir("data",
+      "Fig48ab_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  select(-`...7`) %>%
+  slice_head(n =11)
+  %>%
+  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
+  mutate(TOT = sum(num_ecos, na.rm = T), .by = `TERR types` )%>%
+  mutate(pro_precentage = (num_ecos/TOT)*100)
+
+test.1(Fig42,`TERR types`, pro_precentage, pro_level, num_ecos, TYP = "FG" )
+
+
+
 
 #####################################################################################
 ### unload packages
