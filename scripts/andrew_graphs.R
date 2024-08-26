@@ -373,6 +373,8 @@ Fig4a <- read_excel(
 
 p <- test(Fig4a, `OVERALL types`,2:5, TYP = "FG")
 
+#add_rec <- function(GRAPH, CAT1, ..., X%)
+
 p +
   annotate("rect", xmin =1.5, xmax = 2.5, ymin = -1, ymax = 86.5,alpha = 0, color= "black",linewidth = 1.5)+
   annotate("rect", xmin =7.5, xmax = 8.5, ymin = -1, ymax = 79,alpha = 0, color= "black",linewidth = 1.5)
