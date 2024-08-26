@@ -42,7 +42,7 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
 
   if(TYP == "FG"){
 
-  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = `OVERALL types`, fill = FILL)) +
+  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
     ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
     ggplot2::geom_text(aes(label = COUNT),
                        position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
@@ -296,7 +296,75 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
   }
 }
 
+test.4 <-function(DF, COLS)
+{
 
+  ### define the order of the protection levels
+  cols <- c("#e9302c","#f97835","#fff02a","#eeeea3","#b1d798")
+  breaks <- c("Critically Endangered", "Endangered", "Vulnerable", "Near Threatened", "Least Concern")
+
+
+ ## Prepare the data frame by arranging and setting colors
+  dat <- DF %>%
+    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+    mutate(across(COUNT, ~na_if(., 0))) %>%
+    mutate(FILL = factor(FILL, levels = breaks))%>%
+    dplyr::mutate(ymax = cumsum(COUNT)) %>%
+    dplyr::mutate(ymin = ymax -COUNT)
+
+
+
+  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 3, fill = FILL)) +
+    ggplot2::geom_rect() +
+    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = n), color = "black", size = 5) +  ## Add this line to include count values
+    ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+    ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+    ggplot2::labs(fill = "Threat Status") +
+    ggplot2::theme_void() + ## removes the lines around chart and grey background
+    ggplot2::theme(
+      panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+      plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+    )
+}
+
+test.5 <-function(DF, FILL)
+{
+
+  ### generate a frequency table for the categorical data
+  df <- dplyr::count(DF, {{FILL}})
+
+
+  ### define the order of the protection levels
+  ord <- c("Well Protected", "Moderately Protected", "Poorly Protected", "No Protection")
+
+  # Prepare the data frame by arranging and setting colors
+  df <- df %>%
+    dplyr::arrange(factor({{FILL}}, levels = ord))
+
+  df <- df %>%
+    dplyr::mutate(ymax = cumsum(n)) %>%
+    dplyr::mutate(ymin = ymax -n)
+
+
+  cols <- c("#466a31","#80a952","#d5dec3","#a4a3a3")
+  breaks <- c("Well Protected","Moderately Protected","Poorly Protected","No Protection")
+
+  ggplot2::ggplot(df, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 3, fill = {{FILL}})) +
+    ggplot2::geom_rect() +
+    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = n), color = "black", size = 5) +  # Add this line to include values
+    ggplot2::coord_polar(theta = "y") + # convert to polar coordinates
+    ggplot2::xlim(c(2, 4)) + # limit x-axis to create a donut chart
+    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+    ggplot2::labs(fill = "Protection Levels") +
+    ggplot2::theme_void() + # removes the lines around chart and grey background
+    ggplot2::theme(
+      panel.background = element_rect(fill = "white", color = NA),  # set panel background to white
+      plot.background = element_rect(fill = "white", color = NA)  # set plot background to white
+    )
+}
 #####################################################################################
 ###
 ### fig 1.a
@@ -593,14 +661,9 @@ Fig30 <- read_excel(
          `Data Deficient` = `Data Deficient...7`,
          `Rare` = `Rare...8`,
          `Least Concern` = `Least Concern...9`) %>%
-  select(1:10) %>%
-  # slice_head(n =7)%>%
-  # mutate(across(2:5, as.numeric))%>%
-  pivot_longer(2:9, names_to = "thr_status", values_to = "num_spp")%>%
-  mutate(thr_precentage = (num_spp/`...10`)*100)%>%
-  mutate(across(num_spp, ~na_if(., 0)))
+  select(1:10)
 
-test(Fig30,Realm, thr_precentage, thr_status, num_spp, TYP = "SPP")
+test(Fig30,Realm, 2:9, TYP = "SPP")
 
 
 ###
@@ -636,20 +699,14 @@ Fig34ab <- read_excel(
 
 FG <- Fig34ab%>%
   slice_head(n =8)%>%
-  mutate(across(2:6, as.numeric))%>%
-  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
-  mutate(pro_precentage = (num_ecos/`...6`)*100)%>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:6, as.numeric))
 
 EXT <- Fig34ab%>%
   slice(11:18)%>%
-  mutate(across(2:6, as.numeric))%>%
-  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
-  mutate(pro_precentage = (num_ecos/`...6`)*100)%>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:6, as.numeric))
 
-a <- test.1(FG,`OVERALL types`, pro_precentage, pro_level, num_ecos, TYP = "FG" )
-b <- test.1(EXT,`OVERALL types`, pro_precentage, pro_level, num_ecos, TYP = "EXT" )
+a <- test.1(FG,`OVERALL types`, 2:5, TYP = "FG" )
+b <- test.1(EXT,`OVERALL types`, 2:5, TYP = "EXT" )
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -674,20 +731,14 @@ Fig40ab <- read_excel(
 
 FG <- Fig40ab%>%
   slice_head(n =11)%>%
-  mutate(across(2:6, as.numeric))%>%
-  pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
-  mutate(thr_precentage = (num_ecos/TOT)*100)%>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:6, as.numeric))
 
 EXT <- Fig40ab%>%
   slice(14:24)%>%
-  mutate(across(2:6, as.numeric))%>%
-  pivot_longer(2:5, names_to = "threat_status", values_to = "num_ecos")%>%
-  mutate(thr_precentage = (num_ecos/TOT)*100)%>%
-  mutate(across(num_ecos, ~na_if(., 0)))
+  mutate(across(2:6, as.numeric))
 
-a <- test(FG,`TERR types`, thr_precentage, threat_status, num_ecos, TYP = "FG" )
-b <- test(EXT,`TERR types`, thr_precentage, threat_status, num_ecos, TYP = "EXT" )
+a <- test(FG,`TERR types`, 2:5, TYP = "FG" )
+b <- test(EXT,`TERR types`, 2:5, TYP = "EXT" )
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -704,12 +755,9 @@ Fig42 <- read_excel(
       "Fig42_graph.xlsx",
       full.names = T,
       recursive = T))%>%
-  slice_head(n =11)%>%
-  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
-  mutate(TOT = sum(num_ecos, na.rm = T), .by = `TERR types` )%>%
-  mutate(pro_precentage = (num_ecos/TOT)*100)
+  slice_head(n =11)
 
-test.1(Fig42,`TERR types`, pro_precentage, pro_level, num_ecos, TYP = "FG" )
+test.1(Fig42,`TERR types`, 2:5, TYP = "FG" )
 
 
 
@@ -730,15 +778,103 @@ Fig48ab <- read_excel(
       recursive = T))%>%
   select(-`...7`) %>%
   slice_head(n =11)
-  %>%
-  pivot_longer(2:5, names_to = "pro_level", values_to = "num_ecos")%>%
-  mutate(TOT = sum(num_ecos, na.rm = T), .by = `TERR types` )%>%
-  mutate(pro_precentage = (num_ecos/TOT)*100)
-
-test.1(Fig42,`TERR types`, pro_precentage, pro_level, num_ecos, TYP = "FG" )
 
 
+test.1(Fig42,`TERR types`, 2:5, TYP = "FG" )
 
+
+###
+### Fig51
+
+
+
+Fig51 <- read_excel(
+  dir("data",
+      "Fig51_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =3)%>%
+  pivot_longer(2:4, names_to = "OVERALL_types") %>%
+  pivot_wider(names_from = `River Condition % length`)
+
+
+test.3(Fig51,OVERALL_types , 2:4, TYP = "EXT" )
+
+
+###
+### Fig52
+
+
+
+Fig52 <- read_excel(
+  dir("data",
+      "Fig52_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =3)%>%
+  pivot_longer(2:6, names_to = "OVERALL_types") %>%
+  pivot_wider(names_from = `Wetland Cond`)%>%
+  mutate(across(2:4, as.numeric))
+
+
+test.3(Fig52,OVERALL_types , 2:4, TYP = "EXT" )
+
+
+###
+### Fig53
+
+
+
+Fig53 <- read_excel(
+  dir("data",
+      "Fig53mapinset_graph .xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =8)%>%
+  mutate(across(2:5, as.numeric)) %>%
+  select(1:5)
+%>%
+  pivot_longer(2:5, names_to = "thr")
+
+%>%
+  pivot_wider(names_from = `Wetland Cond`)
+
+
+test.4(Fig53,`OVERALL types`, 2:5)
+
+test.4 <-function(DF, X, COLS)
+{
+
+  ### define the order of the protection levels
+  cols <- c("#e9302c","#f97835","#fff02a","#eeeea3","#b1d798")
+  breaks <- c("Critically Endangered", "Endangered", "Vulnerable", "Near Threatened", "Least Concern")
+
+
+  ## Prepare the data frame by arranging and setting colors
+  dat <- Fig53 %>%
+    pivot_longer(2:5, names_to = "FILL", values_to = "COUNT")%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = `OVERALL types` )%>%
+    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+    mutate(FILL = factor(FILL, levels = breaks))%>%
+    dplyr::mutate(ymax = cumsum(COUNT)) %>%
+    dplyr::mutate(ymin = ymax -COUNT)
+
+
+
+  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 3, fill = FILL)) +
+    ggplot2::geom_rect() +
+    facet_wrap(~`OVERALL types`)+
+    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
+    ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+    ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+    ggplot2::labs(fill = "Threat Status") +
+    ggplot2::theme_void() + ## removes the lines around chart and grey background
+    ggplot2::theme(
+      panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+      plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+    )
+}
 
 #####################################################################################
 ### unload packages
