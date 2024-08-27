@@ -29,7 +29,8 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
 
   cols <- c("black","#e9302c", "#f97835", "#fff02a", "#eeeea3","brown","grey" , "#b1d798")
   breaks <- c("Extinct", "Critically Endangered", "Endangered","Vulnerable","Near Threatened", "Data Deficient", "Rare", "Least Concern")
-
+  ord <-   DF %>%
+    dplyr::pull({{X}})
 
   dat <- DF %>%
     pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
@@ -40,9 +41,12 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
 
 
 
+
   if(TYP == "FG"){
 
-  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+
+
+  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
     ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
     ggplot2::geom_text(aes(label = COUNT),
                        position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
@@ -70,7 +74,7 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
 
     if(TYP == "EXT"){
 
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
         ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
         ggplot2::ylab("Percentage of ecosystem extent") +
@@ -91,7 +95,7 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
 
       else {
 
-        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
           ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
           ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
           ggplot2::ylab("Percentage of Taxa") +
@@ -118,6 +122,9 @@ test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
   cols <- c("#466a31","#80a952","#d5dec3","#a4a3a3")
   breaks <- c("Well Protected","Moderately Protected","Poorly Protected","No Protection")
+  ord <-   DF %>%
+    dplyr::pull({{X}})
+
 
   dat <- DF %>%
     pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
@@ -128,7 +135,7 @@ test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
   if(TYP == "FG"){
 
-    ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+    ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
       ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
       ggplot2::geom_text(aes(label = COUNT),
                          position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
@@ -156,7 +163,7 @@ test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
     if(TYP == "EXT"){
 
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
         ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
         ggplot2::ylab("Percentage of ecosystem extent") +
@@ -177,7 +184,7 @@ test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
     else {
 
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
         ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
         ggplot2::ylab("Percentage of taxa") +
@@ -214,6 +221,9 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
   cols <- c("#6e9fd4","#a5c5c7","#81aba7","#88814e")
   breaks <- c("Natural/near-natural","Moderately modified","Severely/critically modified")
+  ord <-   DF %>%
+    dplyr::pull({{X}})
+
 
   dat <- DF %>%
     pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
@@ -224,7 +234,7 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
   if(TYP == "FG"){
 
-    ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+    ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
       ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
       ggplot2::geom_text(aes(label = COUNT),
                          position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
@@ -252,7 +262,7 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
     if(TYP == "EXT"){
 
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
         ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
         ggplot2::ylab("Percentage of ecosystem extent") +
@@ -273,7 +283,7 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
     else {
 
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = {{X}}, fill = FILL)) +
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
         ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
         ggplot2::ylab("Percentage of taxa") +
@@ -296,29 +306,28 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
   }
 }
 
-test.4 <-function(DF, COLS)
+test.4 <-function(DF, COLS, GRP = NULL)
 {
 
-  ### define the order of the protection levels
+  ### define the order
   cols <- c("#e9302c","#f97835","#fff02a","#eeeea3","#b1d798")
   breaks <- c("Critically Endangered", "Endangered", "Vulnerable", "Near Threatened", "Least Concern")
 
+if(is.null(GRP)) {
 
- ## Prepare the data frame by arranging and setting colors
+  ## Prepare the data frame by arranging and setting colors
   dat <- DF %>%
     pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
-    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-    mutate(across(COUNT, ~na_if(., 0))) %>%
+    group_by(FILL) %>%
+    summarise(COUNT = sum(COUNT, na.rm = T))  %>%
     mutate(FILL = factor(FILL, levels = breaks))%>%
     dplyr::mutate(ymax = cumsum(COUNT)) %>%
     dplyr::mutate(ymin = ymax -COUNT)
 
 
-
-  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 3, fill = FILL)) +
+  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
     ggplot2::geom_rect() +
-    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = n), color = "black", size = 5) +  ## Add this line to include count values
+    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
     ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
     ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
     ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
@@ -328,42 +337,95 @@ test.4 <-function(DF, COLS)
       panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
       plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
     )
+
 }
 
-test.5 <-function(DF, FILL)
+  else {
+
+
+    ## Prepare the data frame by arranging and setting colors
+  dat <- DF %>%
+    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = {{GRP}} )%>%
+    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+    mutate(FILL = factor(FILL, levels = breaks))%>%
+    dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{GRP}}) %>%
+    dplyr::mutate(ymin = ymax -PERCENTAGE)
+
+  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+    ggplot2::geom_rect() +
+    facet_wrap(~{{GRP}})+
+    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
+    ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+    ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+    ggplot2::labs(fill = "Threat Status") +
+    ggplot2::theme_void() + ## removes the lines around chart and grey background
+    ggplot2::theme(
+      panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+      plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+    )
+  }
+}
+
+
+test.5 <-function(DF, COLS, GRP = NULL)
 {
-
-  ### generate a frequency table for the categorical data
-  df <- dplyr::count(DF, {{FILL}})
-
-
-  ### define the order of the protection levels
-  ord <- c("Well Protected", "Moderately Protected", "Poorly Protected", "No Protection")
-
-  # Prepare the data frame by arranging and setting colors
-  df <- df %>%
-    dplyr::arrange(factor({{FILL}}, levels = ord))
-
-  df <- df %>%
-    dplyr::mutate(ymax = cumsum(n)) %>%
-    dplyr::mutate(ymin = ymax -n)
-
-
+  ### define the order
   cols <- c("#466a31","#80a952","#d5dec3","#a4a3a3")
   breaks <- c("Well Protected","Moderately Protected","Poorly Protected","No Protection")
 
-  ggplot2::ggplot(df, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 3, fill = {{FILL}})) +
-    ggplot2::geom_rect() +
-    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = n), color = "black", size = 5) +  # Add this line to include values
-    ggplot2::coord_polar(theta = "y") + # convert to polar coordinates
-    ggplot2::xlim(c(2, 4)) + # limit x-axis to create a donut chart
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-    ggplot2::labs(fill = "Protection Levels") +
-    ggplot2::theme_void() + # removes the lines around chart and grey background
-    ggplot2::theme(
-      panel.background = element_rect(fill = "white", color = NA),  # set panel background to white
-      plot.background = element_rect(fill = "white", color = NA)  # set plot background to white
-    )
+  if(is.null(GRP)) {
+
+    ## Prepare the data frame by arranging and setting colors
+    dat <- DF %>%
+      pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+      group_by(FILL) %>%
+      summarise(COUNT = sum(COUNT, na.rm = T))  %>%
+      mutate(FILL = factor(FILL, levels = breaks))%>%
+      dplyr::mutate(ymax = cumsum(COUNT)) %>%
+      dplyr::mutate(ymin = ymax -COUNT)
+
+    ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+      ggplot2::geom_rect() +
+      ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
+      ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+      ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+      ggplot2::labs(fill = "Threat Status") +
+      ggplot2::theme_void() + ## removes the lines around chart and grey background
+      ggplot2::theme(
+        panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+        plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+      )
+
+  }
+
+  else {
+
+    ## Prepare the data frame by arranging and setting colors
+    dat <- DF %>%
+      pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+      mutate(TOT = sum(COUNT, na.rm = T), .by = {{GRP}} )%>%
+      mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+      mutate(FILL = factor(FILL, levels = breaks))%>%
+      dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{GRP}}) %>%
+      dplyr::mutate(ymin = ymax -PERCENTAGE)
+
+    ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+      ggplot2::geom_rect() +
+      facet_wrap(~{{GRP}})+
+      ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
+      ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+      ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+      ggplot2::labs(fill = "Threat Status") +
+      ggplot2::theme_void() + ## removes the lines around chart and grey background
+      ggplot2::theme(
+        panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+        plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+      )
+  }
 }
 #####################################################################################
 ###
@@ -640,7 +702,7 @@ plot_grid(a,b,
           labels = c("(a)", "(b)"),
           label_size = 8,
           label_fontface = "plain",
-          ncol = 2, nrow = 2)
+          ncol = 2)
 
 
 
@@ -712,7 +774,7 @@ plot_grid(a,b,
           labels = c("(a)", "(b)"),
           label_size = 8,
           label_fontface = "plain",
-          ncol = 2, nrow = 2)
+          ncol = 2)
 
 ##
 ###Fig36ab_graph 8wx7h
@@ -744,7 +806,7 @@ plot_grid(a,b,
           labels = c("(a)", "(b)"),
           label_size = 8,
           label_fontface = "plain",
-          ncol = 2, nrow = 2)
+          ncol = 2)
 
 
 ###
@@ -833,48 +895,81 @@ Fig53 <- read_excel(
   slice_head(n =8)%>%
   mutate(across(2:5, as.numeric)) %>%
   select(1:5)
-%>%
-  pivot_longer(2:5, names_to = "thr")
-
-%>%
-  pivot_wider(names_from = `Wetland Cond`)
 
 
-test.4(Fig53,`OVERALL types`, 2:5)
+test.4(Fig53, 2:5, GRP = "OVERALL types")
 
-test.4 <-function(DF, X, COLS)
-{
+testing <- function (DF, COLS, GRP){
 
-  ### define the order of the protection levels
-  cols <- c("#e9302c","#f97835","#fff02a","#eeeea3","#b1d798")
-  breaks <- c("Critically Endangered", "Endangered", "Vulnerable", "Near Threatened", "Least Concern")
-
-
-  ## Prepare the data frame by arranging and setting colors
-  dat <- Fig53 %>%
-    pivot_longer(2:5, names_to = "FILL", values_to = "COUNT")%>%
-    mutate(TOT = sum(COUNT, na.rm = T), .by = `OVERALL types` )%>%
-    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-    mutate(FILL = factor(FILL, levels = breaks))%>%
-    dplyr::mutate(ymax = cumsum(COUNT)) %>%
-    dplyr::mutate(ymin = ymax -COUNT)
+dat <- Fig53 %>%
+  pivot_longer(2:5, names_to = "FILL", values_to = "COUNT")%>%
+  mutate(TOT = sum(COUNT, na.rm = T), .by = "OVERALL types" )%>%
+  mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+  mutate(FILL = factor(FILL, levels = breaks))%>%
+  dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = "OVERALL types") %>%
+  dplyr::mutate(ymin = ymax -PERCENTAGE)
 
 
+ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+  ggplot2::geom_rect() +
+  facet_wrap(vars(`OVERALL types`))+
+  ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
+  ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+  ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+  ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+  ggplot2::labs(fill = "Threat Status") +
+  ggplot2::theme_void() + ## removes the lines around chart and grey background
+  ggplot2::theme(
+    panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+    plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+)
 
-  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin, xmax = 4, xmin = 3, fill = FILL)) +
-    ggplot2::geom_rect() +
-    facet_wrap(~`OVERALL types`)+
-    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
-    ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-    ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-    ggplot2::labs(fill = "Threat Status") +
-    ggplot2::theme_void() + ## removes the lines around chart and grey background
-    ggplot2::theme(
-      panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-      plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-    )
 }
+###
+### Fig54ab
+
+
+
+Fig54ab <- read_excel(
+  dir("data",
+      "Fig54ab_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+
+FG <- Fig54ab%>%
+  slice_head(n =5)%>%
+  mutate(across(2:6, as.numeric))
+
+EXT <- Fig54ab%>%
+  slice(8:12)%>%
+  mutate(across(2:6, as.numeric))
+
+a <- test(FG,`RIVER types`, 2:5, TYP = "FG" )
+b <- test(EXT,`RIVER types`, 2:5, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
+###
+### Fig55mapinset
+
+
+
+Fig55mapinset <- read_excel(
+  dir("data",
+      "Fig55mapinset_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =8)%>%
+  mutate(across(2:5, as.numeric)) %>%
+  select(1:5)
+
+
+test.4(Fig55mapinset, COLS = 2:5)
+, `OVERALL types`
 
 #####################################################################################
 ### unload packages
