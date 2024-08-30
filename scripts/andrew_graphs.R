@@ -1279,6 +1279,40 @@ plot_grid(a,b,
           label_fontface = "plain",
           ncol = 2)
 
+###
+### Fig74
+
+Fig74 <- read_excel(
+  dir("data",
+      "Fig74_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =8)%>%
+  pivot_longer(2:5, names_to = "OVERALL_types")%>%
+  pivot_wider(names_from = `Est RLS`) %>%
+  select(-2)%>%
+  mutate(across(2:8, as.numeric))
+
+
+test(Fig74, OVERALL_types, 2:8, TYP = "FG" )
+
+
+###
+### Fig84
+
+Fig84 <- read_excel(
+  dir("data",
+      "Fig84_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+
+test.1(Fig84, `2019 MPAs`, 2:5, TYP = "FG" )
+
+
+
+
+
 #####################################################################################
 ### unload packages
 
