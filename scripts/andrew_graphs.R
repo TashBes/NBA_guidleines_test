@@ -306,76 +306,14 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
   }
 }
 
-test.4 <-function(DF, COLS, GRP = NULL)
+test.4 <-function(DF, X, COLS, GRP = FALSE)
 {
 
   ### define the order
   cols <- c("#e9302c","#f97835","#fff02a","#eeeea3","#b1d798")
   breaks <- c("Critically Endangered", "Endangered", "Vulnerable", "Near Threatened", "Least Concern")
 
-if(is.null(GRP)) {
-
-  ## Prepare the data frame by arranging and setting colors
-  dat <- DF %>%
-    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-    group_by(FILL) %>%
-    summarise(COUNT = sum(COUNT, na.rm = T))  %>%
-    mutate(FILL = factor(FILL, levels = breaks))%>%
-    dplyr::mutate(ymax = cumsum(COUNT)) %>%
-    dplyr::mutate(ymin = ymax -COUNT)
-
-
-  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
-    ggplot2::geom_rect() +
-    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
-    ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-    ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-    ggplot2::labs(fill = "Threat Status") +
-    ggplot2::theme_void() + ## removes the lines around chart and grey background
-    ggplot2::theme(
-      panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-      plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-    )
-
-}
-
-  else {
-
-
-    ## Prepare the data frame by arranging and setting colors
-  dat <- DF %>%
-    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-    mutate(TOT = sum(COUNT, na.rm = T), .by = {{GRP}} )%>%
-    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-    mutate(FILL = factor(FILL, levels = breaks))%>%
-    dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{GRP}}) %>%
-    dplyr::mutate(ymin = ymax -PERCENTAGE)
-
-  ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
-    ggplot2::geom_rect() +
-    facet_wrap(~{{GRP}})+
-    ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
-    ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-    ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-    ggplot2::labs(fill = "Threat Status") +
-    ggplot2::theme_void() + ## removes the lines around chart and grey background
-    ggplot2::theme(
-      panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-      plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-    )
-  }
-}
-
-
-test.5 <-function(DF, COLS, GRP = NULL)
-{
-  ### define the order
-  cols <- c("#466a31","#80a952","#d5dec3","#a4a3a3")
-  breaks <- c("Well Protected","Moderately Protected","Poorly Protected","No Protection")
-
-  if(is.null(GRP)) {
+  if(GRP == FALSE) {
 
     ## Prepare the data frame by arranging and setting colors
     dat <- DF %>%
@@ -385,6 +323,7 @@ test.5 <-function(DF, COLS, GRP = NULL)
       mutate(FILL = factor(FILL, levels = breaks))%>%
       dplyr::mutate(ymax = cumsum(COUNT)) %>%
       dplyr::mutate(ymin = ymax -COUNT)
+
 
     ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
       ggplot2::geom_rect() +
@@ -403,18 +342,81 @@ test.5 <-function(DF, COLS, GRP = NULL)
 
   else {
 
+
     ## Prepare the data frame by arranging and setting colors
     dat <- DF %>%
       pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-      mutate(TOT = sum(COUNT, na.rm = T), .by = {{GRP}} )%>%
+      mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
       mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
       mutate(FILL = factor(FILL, levels = breaks))%>%
-      dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{GRP}}) %>%
+      dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{X}}) %>%
       dplyr::mutate(ymin = ymax -PERCENTAGE)
 
     ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
       ggplot2::geom_rect() +
-      facet_wrap(~{{GRP}})+
+      facet_wrap(vars({{X}}))+
+      ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
+      ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+      ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+      ggplot2::labs(fill = "Threat Status") +
+      ggplot2::theme_void() + ## removes the lines around chart and grey background
+      ggplot2::theme(
+        panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+        plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+      )
+  }
+}
+
+
+test.5 <-function(DF, COLS, GRP = NULL)
+{
+  ### define the order
+  cols <- c("#466a31","#80a952","#d5dec3","#a4a3a3")
+  breaks <- c("Well Protected","Moderately Protected","Poorly Protected","No Protection")
+
+  if(GRP == FALSE) {
+
+    ## Prepare the data frame by arranging and setting colors
+    dat <- DF %>%
+      pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+      group_by(FILL) %>%
+      summarise(COUNT = sum(COUNT, na.rm = T))  %>%
+      mutate(FILL = factor(FILL, levels = breaks))%>%
+      dplyr::mutate(ymax = cumsum(COUNT)) %>%
+      dplyr::mutate(ymin = ymax -COUNT)
+
+
+    ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+      ggplot2::geom_rect() +
+      ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
+      ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+      ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+      ggplot2::labs(fill = "Threat Status") +
+      ggplot2::theme_void() + ## removes the lines around chart and grey background
+      ggplot2::theme(
+        panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+        plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+      )
+
+  }
+
+  else {
+
+
+    ## Prepare the data frame by arranging and setting colors
+    dat <- DF %>%
+      pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+      mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+      mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+      mutate(FILL = factor(FILL, levels = breaks))%>%
+      dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{X}}) %>%
+      dplyr::mutate(ymin = ymax -PERCENTAGE)
+
+    ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+      ggplot2::geom_rect() +
+      facet_wrap(vars({{X}}))+
       ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
       ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
       ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
@@ -887,6 +889,7 @@ test.3(Fig52,OVERALL_types , 2:4, TYP = "EXT" )
 
 
 
+
 Fig53 <- read_excel(
   dir("data",
       "Fig53mapinset_graph .xlsx",
@@ -897,34 +900,11 @@ Fig53 <- read_excel(
   select(1:5)
 
 
-test.4(Fig53, 2:5, GRP = "OVERALL types")
-
-testing <- function (DF, COLS, GRP){
-
-dat <- Fig53 %>%
-  pivot_longer(2:5, names_to = "FILL", values_to = "COUNT")%>%
-  mutate(TOT = sum(COUNT, na.rm = T), .by = "OVERALL types" )%>%
-  mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-  mutate(FILL = factor(FILL, levels = breaks))%>%
-  dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = "OVERALL types") %>%
-  dplyr::mutate(ymin = ymax -PERCENTAGE)
+test.4(Fig53, `OVERALL types`, 2:5, GRP = T)
 
 
-ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
-  ggplot2::geom_rect() +
-  facet_wrap(vars(`OVERALL types`))+
-  ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
-  ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-  ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-  ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-  ggplot2::labs(fill = "Threat Status") +
-  ggplot2::theme_void() + ## removes the lines around chart and grey background
-  ggplot2::theme(
-    panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-    plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-)
 
-}
+
 ###
 ### Fig54ab
 
@@ -968,8 +948,9 @@ Fig55mapinset <- read_excel(
   select(1:5)
 
 
-test.4(Fig55mapinset, COLS = 2:5)
-, `OVERALL types`
+test.4(Fig55mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
+
+
 
 #####################################################################################
 ### unload packages
