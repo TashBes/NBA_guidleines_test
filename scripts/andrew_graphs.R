@@ -25,10 +25,11 @@ library("cowplot")
 #####################################################################################
 ### functions
 
-test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
+test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END")){
 
   cols <- c("black","#e9302c", "#f97835", "#fff02a", "#eeeea3","brown","grey" , "#b1d798")
   breaks <- c("Extinct", "Critically Endangered", "Endangered","Vulnerable","Near Threatened", "Data Deficient", "Rare", "Least Concern")
+
   ord <-   DF %>%
     dplyr::pull({{X}})
 
@@ -38,9 +39,6 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
     mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
     mutate(across(COUNT, ~na_if(., 0))) %>%
     mutate(FILL = factor(FILL, levels = breaks))
-
-
-
 
   if(TYP == "FG"){
 
@@ -95,10 +93,12 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
 
       else {
 
+        if(TYP == "TAXA"){
+
         ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
           ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
           ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-          ggplot2::ylab("Percentage of Taxa") +
+          ggplot2::ylab("Percentage of taxa") +
           ggplot2::xlab("") + ## remove the heading for the y-axis
           ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
           ggplot2::labs(fill = "") + ## change the legend title here
@@ -112,6 +112,29 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")){
                          plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
                          plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
           ggplot2::coord_flip()  # flip the orientation of the chart
+      }
+
+        else {
+
+          ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+            ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+            ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+            ggplot2::ylab("Percentage of endemic taxa") +
+            ggplot2::xlab("") + ## remove the heading for the y-axis
+            ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+            ggplot2::labs(fill = "") + ## change the legend title here
+            ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+            ggplot2::theme_minimal() +
+            ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                           panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                           axis.line = element_blank(), # remove all x-axis grid lines
+                           panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                           legend.text = element_text(size = 8), # change legend text size
+                           plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                           plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+            ggplot2::coord_flip()  # flip the orientation of the chart
+
+        }
 
       }
 
@@ -135,6 +158,8 @@ test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
   if(TYP == "FG"){
 
+
+
     ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
       ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
       ggplot2::geom_text(aes(label = COUNT),
@@ -142,7 +167,7 @@ test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
                          size = 3,
                          color = "black",
                          show.legend = FALSE) + # adjust size of labels with no legend being shown
-      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
       ggplot2::ylab("Percentage of ecosystem types") +
       ggplot2::xlab("") + ## remove the heading for the y-axis
       ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
@@ -184,23 +209,48 @@ test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
     else {
 
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
-        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-        ggplot2::ylab("Percentage of taxa") +
-        ggplot2::xlab("") + ## remove the heading for the y-axis
-        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-        ggplot2::labs(fill = "") + ## change the legend title here
-        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-        ggplot2::theme_minimal() +
-        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                       axis.line = element_blank(), # remove all x-axis grid lines
-                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                       legend.text = element_text(size = 8), # change legend text size
-                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-        ggplot2::coord_flip()  # flip the orientation of the chart
+      if(TYP == "TAXA"){
+
+        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+          ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+          ggplot2::ylab("Percentage of taxa") +
+          ggplot2::xlab("") + ## remove the heading for the y-axis
+          ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+          ggplot2::labs(fill = "") + ## change the legend title here
+          ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+          ggplot2::theme_minimal() +
+          ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                         panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                         axis.line = element_blank(), # remove all x-axis grid lines
+                         panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                         legend.text = element_text(size = 8), # change legend text size
+                         plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                         plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+          ggplot2::coord_flip()  # flip the orientation of the chart
+      }
+
+      else {
+
+        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+          ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+          ggplot2::ylab("Percentage of endemic taxa") +
+          ggplot2::xlab("") + ## remove the heading for the y-axis
+          ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+          ggplot2::labs(fill = "") + ## change the legend title here
+          ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+          ggplot2::theme_minimal() +
+          ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                         panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                         axis.line = element_blank(), # remove all x-axis grid lines
+                         panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                         legend.text = element_text(size = 8), # change legend text size
+                         plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                         plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+          ggplot2::coord_flip()  # flip the orientation of the chart
+
+      }
 
     }
 
@@ -219,8 +269,8 @@ test.2 <- function(DF,YEAR, RLI, min, max){
 
 test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
-  cols <- c("#6e9fd4","#a5c5c7","#81aba7","#88814e")
-  breaks <- c("Natural/near-natural","Moderately modified","Severely/critically modified")
+  cols <- c("#6e9fd4","#6e9fd4", "#a5c5c7","#81aba7","#88814e","#88812e")
+  breaks <- c("Natural", "Natural/near-natural", "Near-natural", "Moderately modified","Heavily modified", "Severely/critically modified")
   ord <-   DF %>%
     dplyr::pull({{X}})
 
@@ -234,6 +284,8 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
   if(TYP == "FG"){
 
+
+
     ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
       ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
       ggplot2::geom_text(aes(label = COUNT),
@@ -241,7 +293,7 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
                          size = 3,
                          color = "black",
                          show.legend = FALSE) + # adjust size of labels with no legend being shown
-      ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+      ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
       ggplot2::ylab("Percentage of ecosystem types") +
       ggplot2::xlab("") + ## remove the heading for the y-axis
       ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
@@ -283,28 +335,54 @@ test.3 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
     else {
 
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
-        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-        ggplot2::ylab("Percentage of taxa") +
-        ggplot2::xlab("") + ## remove the heading for the y-axis
-        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-        ggplot2::labs(fill = "") + ## change the legend title here
-        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-        ggplot2::theme_minimal() +
-        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                       axis.line = element_blank(), # remove all x-axis grid lines
-                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                       legend.text = element_text(size = 8), # change legend text size
-                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-        ggplot2::coord_flip()  # flip the orientation of the chart
+      if(TYP == "TAXA"){
+
+        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+          ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+          ggplot2::ylab("Percentage of taxa") +
+          ggplot2::xlab("") + ## remove the heading for the y-axis
+          ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+          ggplot2::labs(fill = "") + ## change the legend title here
+          ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+          ggplot2::theme_minimal() +
+          ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                         panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                         axis.line = element_blank(), # remove all x-axis grid lines
+                         panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                         legend.text = element_text(size = 8), # change legend text size
+                         plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                         plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+          ggplot2::coord_flip()  # flip the orientation of the chart
+      }
+
+      else {
+
+        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+          ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+          ggplot2::ylab("Percentage of endemic taxa") +
+          ggplot2::xlab("") + ## remove the heading for the y-axis
+          ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+          ggplot2::labs(fill = "") + ## change the legend title here
+          ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+          ggplot2::theme_minimal() +
+          ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                         panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                         axis.line = element_blank(), # remove all x-axis grid lines
+                         panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                         legend.text = element_text(size = 8), # change legend text size
+                         plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                         plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+          ggplot2::coord_flip()  # flip the orientation of the chart
+
+      }
 
     }
 
   }
 }
+
 
 test.4 <-function(DF, X, COLS, GRP = FALSE)
 {
@@ -369,8 +447,10 @@ test.4 <-function(DF, X, COLS, GRP = FALSE)
 }
 
 
-test.5 <-function(DF, COLS, GRP = NULL)
+
+test.5 <-function(DF, X, COLS, GRP = FALSE)
 {
+
   ### define the order
   cols <- c("#466a31","#80a952","#d5dec3","#a4a3a3")
   breaks <- c("Well Protected","Moderately Protected","Poorly Protected","No Protection")
@@ -508,8 +588,8 @@ p <- test(Fig4a, `OVERALL types`,2:5, TYP = "FG")
 #add_rec <- function(GRAPH, CAT1, ..., X%)
 
 p +
-  annotate("rect", xmin =1.5, xmax = 2.5, ymin = -1, ymax = 86.5,alpha = 0, color= "black",linewidth = 1.5)+
-  annotate("rect", xmin =7.5, xmax = 8.5, ymin = -1, ymax = 79,alpha = 0, color= "black",linewidth = 1.5)
+  annotate("rect", xmin =2.5, xmax = 3.5, ymin = -1, ymax = 86.5,alpha = 0, color= "black",linewidth = 1.5)+
+  annotate("rect", xmin =4.5, xmax = 5.5, ymin = -1, ymax = 79,alpha = 0, color= "black",linewidth = 1.5)
 
 
 ###
@@ -527,8 +607,8 @@ Fig4b <- read_excel(
 p <- test.1(Fig4b, `OVERALL types`, 2:5, TYP = "FG")
 
 p +
-  annotate("rect", xmin =1.5, xmax = 2.5, ymin = -1, ymax = 19,alpha = 0, color= "black",linewidth = 1.5)+
-  annotate("rect", xmin =7.5, xmax = 8.5, ymin = -1, ymax = 6,alpha = 0, color= "black",linewidth = 1.5)
+  annotate("rect", xmin =2.5, xmax = 3.5, ymin = -1, ymax = 18.5,alpha = 0, color= "black",linewidth = 1.5)+
+  annotate("rect", xmin =4.5, xmax = 5.5, ymin = -1, ymax = 6,alpha = 0, color= "black",linewidth = 1.5)
 
 
 ###
@@ -950,6 +1030,225 @@ Fig55mapinset <- read_excel(
 
 test.4(Fig55mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
 
+
+
+###
+### Fig56
+
+Fig56 <- read_excel(
+  dir("data",
+      "Fig56_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+
+FG <- Fig56%>%
+  slice_head(n =5)%>%
+  mutate(across(2:6, as.numeric))
+
+EXT <- Fig56%>%
+  slice(8:12)%>%
+  mutate(across(2:6, as.numeric))
+
+a <- test(FG,`WETLAND types`, 2:5, TYP = "FG" )
+b <- test(EXT,`WETLAND types`, 2:5, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
+
+
+###
+### Fig58mapinset
+
+
+
+Fig58mapinset <- read_excel(
+  dir("data",
+      "Fig58mapinset_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =8)%>%
+  mutate(across(2:5, as.numeric)) %>%
+  select(1:5)
+
+
+test.5(Fig58mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
+
+
+###
+### Fig59ab
+
+Fig59ab <- read_excel(
+  dir("data",
+      "Fig59ab_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+
+FG <- Fig59ab%>%
+  slice_head(n =5)%>%
+  mutate(across(2:5, as.numeric))
+
+EXT <- Fig59ab%>%
+  slice(8:12)%>%
+  mutate(across(2:5, as.numeric))
+
+a <- test.1(FG,`RIVER types`, 2:5, TYP = "FG" )
+b <- test.1(EXT,`RIVER types`, 2:5, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
+
+
+###
+### Fig61mapinset
+
+
+
+Fig61mapinset <- read_excel(
+  dir("data",
+      "Fig61mapinset_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =8)%>%
+  mutate(across(2:5, as.numeric)) %>%
+  select(1:5)
+
+
+test.5(Fig61mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
+
+
+###
+### Fig64ab
+
+Fig64ab <- read_excel(
+  dir("data",
+      "Fig64ab_graph.xlsx",
+      full.names = T,
+      recursive = T))
+
+
+TAXA <- Fig64ab%>%
+  select(1:8) %>%
+  janitor::row_to_names(row_number = 1)%>%
+  mutate(across(2:8, as.numeric))%>%
+  pivot_longer(2:8, names_to = "OVERALL_types")%>%
+  pivot_wider(names_from = `All species`)
+
+END <- Fig64ab%>%
+  select(10:17) %>%
+  janitor::row_to_names(row_number = 1)%>%
+  mutate(across(2:8, as.numeric))%>%
+  pivot_longer(2:8, names_to = "OVERALL_types")%>%
+  pivot_wider(names_from = `All species`)
+
+a <- test(TAXA,OVERALL_types, 2:9, TYP = "TAXA" )
+b <- test(END,OVERALL_types, 2:9, TYP = "END" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
+
+
+###
+### Fig67ab
+
+Fig67ab <- read_excel(
+  dir("data",
+      "Fig67ab_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  janitor::row_to_names(row_number = 1)
+
+
+TAXA <- Fig67ab%>%
+  slice_head(n =5)%>%
+  mutate(across(2:5, as.numeric))
+
+END <- Fig67ab%>%
+  slice(9:13)%>%
+  mutate(across(2:5, as.numeric))
+
+a <- test.1(TAXA,all, 2:5, TYP = "TAXA" )
+b <- test.1(END,all, 2:5, TYP = "END" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
+
+###
+##Fig68_graph fixed20190829
+
+## still working on
+
+###
+### Fig69ab
+
+Fig69ab <- read_excel(
+  dir("data",
+      "Fig69ab_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  janitor::row_to_names(row_number = 1)
+
+
+FG <- Fig69ab%>%
+  slice_head(n =5)%>%
+  mutate(across(2:6, as.numeric))
+
+EXT <- Fig69ab%>%
+  slice(7:11)%>%
+  mutate(across(2:6, as.numeric))
+
+a <- test.3(FG, `Biogeographical region`, 2:6, TYP = "FG" )
+b <- test.3(EXT, `Biogeographical region`, 2:6, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
+
+
+
+###
+### Fig71ab
+
+Fig71ab <- read_excel(
+  dir("data",
+      "Fig71ab_graph.xlsx",
+      full.names = T,
+      recursive = T)) %>%
+  select(-1)
+
+
+
+FG <- Fig71ab%>%
+  slice_head(n =5)%>%
+  mutate(across(2:5, as.numeric))
+
+EXT <- Fig71ab%>%
+  slice(7:11)%>%
+  mutate(across(2:5, as.numeric))
+
+a <- test(FG, `Biogeographical region`, 2:5, TYP = "FG" )
+b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
 
 
 #####################################################################################
