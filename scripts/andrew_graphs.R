@@ -1250,6 +1250,34 @@ plot_grid(a,b,
           label_fontface = "plain",
           ncol = 2)
 
+###
+### Fig73ab
+
+Fig73ab <- read_excel(
+  dir("data",
+      "Fig73ab_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  janitor::row_to_names(row_number = 1)
+
+
+
+FG <- Fig73ab%>%
+  slice_head(n =5)%>%
+  mutate(across(2:5, as.numeric))
+
+EXT <- Fig73ab%>%
+  slice(8:12)%>%
+  mutate(across(2:5, as.numeric))
+
+a <- test.1(FG, `Biogeographical region`, 2:5, TYP = "FG" )
+b <- test.1(EXT, `Biogeographical region`, 2:5, TYP = "EXT" )
+
+plot_grid(a,b,
+          labels = c("(a)", "(b)"),
+          label_size = 8,
+          label_fontface = "plain",
+          ncol = 2)
 
 #####################################################################################
 ### unload packages
