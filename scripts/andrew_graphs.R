@@ -1031,63 +1031,6 @@ Fig55mapinset <- read_excel(
 test.4(Fig55mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
 
 
-### Fig90
-
-
-
-Fig90 <- read_excel(
-  dir("data",
-      "Fig90_graph.xlsx",
-      full.names = T,
-      recursive = T)) %>%
-  select(1:7)%>%
-  mutate(`...1` = if_else(is.na(`...1`), "OVERALL_types", `...1`)) %>%
-  janitor::row_to_names(1)%>%
-  slice_head(n =2)%>%
-  mutate(across(2:7, as.numeric))
-
-
-test.6(Fig90, OVERALL_types, COLS = 2:7)
-
-
-
-
-test.6 <-function(DF, X, COLS){
-
-  cols <- c("#B9B386","#DB7D15", "#B36611", "#808080", "#F5C592","#0071C0")
-  breaks <- c("Natural", "Cropland", "Plantation","Built up","Mine", "Artificial waterbody")
-  ord <-   DF %>%
-    dplyr::pull({{X}})
-
-  dat <- DF %>%
-    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
-    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-    mutate(across(COUNT, ~na_if(., 0))) %>%
-    mutate(FILL = factor(FILL, levels = breaks))
-
-
-    ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
-      ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-      ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
-      ggplot2::ylab("Percentage extent in each land cover category") +
-      ggplot2::xlab("") + ## remove the heading for the y-axis
-      ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-      ggplot2::labs(fill = "") + ## change the legend title here
-      ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-      ggplot2::theme_minimal() +
-      ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                     panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                     axis.line = element_blank(), # remove all x-axis grid lines
-                     panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                     legend.text = element_text(size = 8), # change legend text size
-                     plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                     plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-      ggplot2::coord_flip()  # flip the orientation of the chart
-
-}
-
-
 
 ###
 ### Fig56
@@ -1367,6 +1310,62 @@ Fig84 <- read_excel(
 test.1(Fig84, `2019 MPAs`, 2:5, TYP = "FG" )
 
 
+
+### Fig90
+
+
+
+Fig90 <- read_excel(
+  dir("data",
+      "Fig90_graph.xlsx",
+      full.names = T,
+      recursive = T)) %>%
+  select(1:7)%>%
+  mutate(`...1` = if_else(is.na(`...1`), "OVERALL_types", `...1`)) %>%
+  janitor::row_to_names(1)%>%
+  slice_head(n =2)%>%
+  mutate(across(2:7, as.numeric))
+
+
+test.6(Fig90, OVERALL_types, COLS = 2:7)
+
+
+
+
+test.6 <-function(DF, X, COLS){
+
+  cols <- c("#B9B386","#DB7D15", "#B36611", "#808080", "#F5C592","#0071C0")
+  breaks <- c("Natural", "Cropland", "Plantation","Built up","Mine", "Artificial waterbody")
+  ord <-   DF %>%
+    dplyr::pull({{X}})
+
+  dat <- DF %>%
+    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+    mutate(across(COUNT, ~na_if(., 0))) %>%
+    mutate(FILL = factor(FILL, levels = breaks))
+
+
+  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+    ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
+    ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
+    ggplot2::ylab("Percentage extent in each land cover category") +
+    ggplot2::xlab("") + ## remove the heading for the y-axis
+    ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
+    ggplot2::labs(fill = "") + ## change the legend title here
+    ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
+    ggplot2::theme_minimal() +
+    ggplot2::theme(legend.position = "bottom", # position legend to the bottom
+                   panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+                   axis.line = element_blank(), # remove all x-axis grid lines
+                   panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+                   legend.text = element_text(size = 8), # change legend text size
+                   plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
+                   plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
+    ggplot2::coord_flip()  # flip the orientation of the chart
+
+}
 
 
 
