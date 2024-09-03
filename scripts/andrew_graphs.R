@@ -25,10 +25,112 @@ library("cowplot")
 #####################################################################################
 ### functions
 
-test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END")){
+test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END"), CHRT = c("bar", "donut"), GRP = FALSE){
+  cols <- c("#6e9fd4",
+            "#6e9fd4",
+            "#a5c5c7",
+            "#81aba7",
+            "#88814e",
+            "#88812e",
+            "#466a31",
+            "#80a952",
+            "#d5dec3",
+            "#a4a3a3",
+            "black",
+            "#e9302c",
+            "#f97835",
+            "#fff02a",
+            "#eeeea3",
+            "brown",
+            "grey" ,
+            "#b1d798",
+            "#DB7D15",
+            "#B36611",
+            "#808080",
+            "#F5C592",
+            "#0071C0")
+  breaks <- c("Natural",
+              "Natural/near-natural",
+              "Near-natural",
+              "Moderately modified",
+              "Heavily modified",
+              "Severely/critically modified",
+              "Well Protected",
+              "Moderately Protected",
+              "Poorly Protected",
+              "No Protection",
+              "Extinct",
+              "Critically Endangered",
+              "Endangered","Vulnerable",
+              "Near Threatened",
+              "Data Deficient",
+              "Rare",
+              "Least Concern",
+              "Cropland",
+              "Plantation",
+              "Built up",
+              "Mine",
+              "Artificial waterbody")
 
-  cols <- c("black","#e9302c", "#f97835", "#fff02a", "#eeeea3","brown","grey" , "#b1d798", "#B9B386","#DB7D15", "#B36611", "#808080", "#F5C592","#0071C0")
-  breaks <- c("Extinct", "Critically Endangered", "Endangered","Vulnerable","Near Threatened", "Data Deficient", "Rare", "Least Concern", "Natural", "Cropland", "Plantation","Built up","Mine", "Artificial waterbody")
+  if(CHRT == "donut"){
+
+    if(GRP == FALSE) {
+
+      ## Prepare the data frame by arranging and setting colors
+      dat <- DF %>%
+        pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+        group_by(FILL) %>%
+        summarise(COUNT = sum(COUNT, na.rm = T))  %>%
+        mutate(FILL = factor(FILL, levels = breaks))%>%
+        dplyr::mutate(ymax = cumsum(COUNT)) %>%
+        dplyr::mutate(ymin = ymax -COUNT)
+
+
+      ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+        ggplot2::geom_rect() +
+        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
+        ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+        ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+        ggplot2::labs(fill = "Threat Status") +
+        ggplot2::theme_void() + ## removes the lines around chart and grey background
+        ggplot2::theme(
+          panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+          plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+        )
+
+    }
+
+    else {
+
+
+      ## Prepare the data frame by arranging and setting colors
+      dat <- DF %>%
+        pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+        mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+        mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+        mutate(FILL = factor(FILL, levels = breaks))%>%
+        dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{X}}) %>%
+        dplyr::mutate(ymin = ymax -PERCENTAGE)
+
+      ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+        ggplot2::geom_rect() +
+        facet_wrap(vars({{X}}))+
+        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
+        ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+        ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+        ggplot2::labs(fill = "Threat Status") +
+        ggplot2::theme_void() + ## removes the lines around chart and grey background
+        ggplot2::theme(
+          panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+          plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
+        )
+    }
+  }
+
+
+else {
 
   ord <-   DF %>%
     dplyr::pull({{X}})
@@ -139,7 +241,9 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END")){
       }
 
   }
-  }
+}
+}
+
 
 test.1 <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA")) {
 
@@ -521,7 +625,7 @@ Fig1a <- read_excel(
   slice_head(n =8) %>%
   mutate(across(2:6, as.numeric))
 
-test(Fig1a, `OVERALL types`, 2:5,  TYP = "FG")
+test(Fig1a, `OVERALL types`, 2:5,  TYP = "FG", CHRT = "bar")
 
 
 ###
@@ -537,7 +641,7 @@ Fig1b <- read_excel(
   pivot_wider(names_from = `Red List Category`)
 
 
-test(Fig1b, OVERALL_types, 2:5,  TYP = "SPP")
+test(Fig1b, OVERALL_types, 2:5,  TYP = "SPP", CHRT = "bar")
 
 ###
 ### fig 1.c
@@ -551,7 +655,7 @@ Fig1c <- read_excel(
   mutate(across(2:5, as.numeric))
 
 
-test.1(Fig1c, `OVERALL types`, 2:5,  TYP = "FG")
+test(Fig1c, `OVERALL types`, 2:5,  TYP = "FG", CHRT = "bar")
 
 
 ###
@@ -567,7 +671,7 @@ Fig1d <- read_excel(
 
 
 
-test.1(Fig1d, OVERALL_types, 2:5, TYP = "SPP")
+test(Fig1d, OVERALL_types, 2:5, TYP = "SPP", CHRT = "bar")
 
 
 ###
@@ -583,7 +687,7 @@ Fig4a <- read_excel(
 
 
 
-p <- test(Fig4a, `OVERALL types`,2:5, TYP = "FG")
+p <- test(Fig4a, `OVERALL types`,2:5, TYP = "FG", CHRT = "bar")
 
 #add_rec <- function(GRAPH, CAT1, ..., X%)
 
@@ -604,7 +708,7 @@ Fig4b <- read_excel(
   mutate(across(2:6, as.numeric))
 
 
-p <- test.1(Fig4b, `OVERALL types`, 2:5, TYP = "FG")
+p <- test(Fig4b, `OVERALL types`, 2:5, TYP = "FG", CHRT = "bar")
 
 p +
   annotate("rect", xmin =2.5, xmax = 3.5, ymin = -1, ymax = 18.5,alpha = 0, color= "black",linewidth = 1.5)+
@@ -757,7 +861,7 @@ Fig27 <- read_excel(
   mutate(across(2:5, as.numeric))
 
 
-test.3(Fig27,`...1`, 2:4, TYP = "EXT")
+test(Fig27,`...1`, 2:4, TYP = "EXT", CHRT = "bar")
 
 
 ###
@@ -777,8 +881,8 @@ EXT <- Fig28ab%>%
   slice(11:18)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`OVERALL types`, 2:5, TYP = "FG" )
-b <- test(EXT,`OVERALL types`, 2:5, TYP = "EXT" )
+a <- test(FG,`OVERALL types`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT,`OVERALL types`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -807,7 +911,7 @@ Fig30 <- read_excel(
          `Least Concern` = `Least Concern...9`) %>%
   select(1:10)
 
-test(Fig30,Realm, 2:9, TYP = "SPP")
+test(Fig30,Realm, 2:9, TYP = "SPP", CHRT = "bar")
 
 
 ###
@@ -849,8 +953,8 @@ EXT <- Fig34ab%>%
   slice(11:18)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test.1(FG,`OVERALL types`, 2:5, TYP = "FG" )
-b <- test.1(EXT,`OVERALL types`, 2:5, TYP = "EXT" )
+a <- test(FG,`OVERALL types`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT,`OVERALL types`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -881,8 +985,8 @@ EXT <- Fig40ab%>%
   slice(14:24)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`TERR types`, 2:5, TYP = "FG" )
-b <- test(EXT,`TERR types`, 2:5, TYP = "EXT" )
+a <- test(FG,`TERR types`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT,`TERR types`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -901,7 +1005,7 @@ Fig42 <- read_excel(
       recursive = T))%>%
   slice_head(n =11)
 
-test.1(Fig42,`TERR types`, 2:5, TYP = "FG" )
+test(Fig42,`TERR types`, 2:5, TYP = "FG", CHRT = "bar")
 
 
 
@@ -924,7 +1028,7 @@ Fig48ab <- read_excel(
   slice_head(n =11)
 
 
-test.1(Fig42,`TERR types`, 2:5, TYP = "FG" )
+test(Fig42,`TERR types`, 2:5, TYP = "FG", CHRT = "bar")
 
 
 ###
@@ -942,7 +1046,7 @@ Fig51 <- read_excel(
   pivot_wider(names_from = `River Condition % length`)
 
 
-test.3(Fig51,OVERALL_types , 2:4, TYP = "EXT" )
+test(Fig51,OVERALL_types , 2:4, TYP = "EXT", CHRT = "bar")
 
 
 ###
@@ -961,7 +1065,7 @@ Fig52 <- read_excel(
   mutate(across(2:4, as.numeric))
 
 
-test.3(Fig52,OVERALL_types , 2:4, TYP = "EXT" )
+test(Fig52,OVERALL_types , 2:4, TYP = "EXT", CHRT = "bar")
 
 
 ###
@@ -980,7 +1084,7 @@ Fig53 <- read_excel(
   select(1:5)
 
 
-test.4(Fig53, `OVERALL types`, 2:5, GRP = T)
+test(Fig53, `OVERALL types`, 2:5, TYP = "FG", GRP = T, CHRT = "donut")
 
 
 
@@ -1005,8 +1109,8 @@ EXT <- Fig54ab%>%
   slice(8:12)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`RIVER types`, 2:5, TYP = "FG" )
-b <- test(EXT,`RIVER types`, 2:5, TYP = "EXT" )
+a <- test(FG,`RIVER types`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT,`RIVER types`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1028,7 +1132,7 @@ Fig55mapinset <- read_excel(
   select(1:5)
 
 
-test.4(Fig55mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
+test(Fig55mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
 
 
 
@@ -1050,8 +1154,8 @@ EXT <- Fig56%>%
   slice(8:12)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`WETLAND types`, 2:5, TYP = "FG" )
-b <- test(EXT,`WETLAND types`, 2:5, TYP = "EXT" )
+a <- test(FG,`WETLAND types`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT,`WETLAND types`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1075,7 +1179,7 @@ Fig58mapinset <- read_excel(
   select(1:5)
 
 
-test.5(Fig58mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
+test(Fig58mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
 
 
 ###
@@ -1096,8 +1200,8 @@ EXT <- Fig59ab%>%
   slice(8:12)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test.1(FG,`RIVER types`, 2:5, TYP = "FG" )
-b <- test.1(EXT,`RIVER types`, 2:5, TYP = "EXT" )
+a <- test(FG,`RIVER types`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT,`RIVER types`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1121,7 +1225,7 @@ Fig61mapinset <- read_excel(
   select(1:5)
 
 
-test.5(Fig61mapinset, `OVERALL types`, COLS = 2:5, GRP = T)
+test(Fig61mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
 
 
 ###
@@ -1148,8 +1252,8 @@ END <- Fig64ab%>%
   pivot_longer(2:8, names_to = "OVERALL_types")%>%
   pivot_wider(names_from = `All species`)
 
-a <- test(TAXA,OVERALL_types, 2:9, TYP = "TAXA" )
-b <- test(END,OVERALL_types, 2:9, TYP = "END" )
+a <- test(TAXA,OVERALL_types, 2:9, TYP = "TAXA", CHRT = "bar")
+b <- test(END,OVERALL_types, 2:9, TYP = "END", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1177,8 +1281,8 @@ END <- Fig67ab%>%
   slice(9:13)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test.1(TAXA,all, 2:5, TYP = "TAXA" )
-b <- test.1(END,all, 2:5, TYP = "END" )
+a <- test(TAXA,all, 2:5, TYP = "TAXA", CHRT = "bar")
+b <- test(END,all, 2:5, TYP = "END", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1210,8 +1314,8 @@ EXT <- Fig69ab%>%
   slice(7:11)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test.3(FG, `Biogeographical region`, 2:6, TYP = "FG" )
-b <- test.3(EXT, `Biogeographical region`, 2:6, TYP = "EXT" )
+a <- test(FG, `Biogeographical region`, 2:6, TYP = "FG", CHRT = "bar")
+b <- test(EXT, `Biogeographical region`, 2:6, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1241,8 +1345,8 @@ EXT <- Fig71ab%>%
   slice(7:11)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test(FG, `Biogeographical region`, 2:5, TYP = "FG" )
-b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT" )
+a <- test(FG, `Biogeographical region`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1270,8 +1374,8 @@ EXT <- Fig73ab%>%
   slice(8:12)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test.1(FG, `Biogeographical region`, 2:5, TYP = "FG" )
-b <- test.1(EXT, `Biogeographical region`, 2:5, TYP = "EXT" )
+a <- test(FG, `Biogeographical region`, 2:5, TYP = "FG", CHRT = "bar")
+b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1294,7 +1398,7 @@ Fig74 <- read_excel(
   mutate(across(2:8, as.numeric))
 
 
-test(Fig74, OVERALL_types, 2:8, TYP = "FG" )
+test(Fig74, OVERALL_types, 2:8, TYP = "FG", CHRT = "bar")
 
 
 ###
@@ -1307,7 +1411,7 @@ Fig84 <- read_excel(
       recursive = T))
 
 
-test.1(Fig84, `2019 MPAs`, 2:5, TYP = "FG" )
+test(Fig84, `2019 MPAs`, 2:5, TYP = "FG", CHRT = "bar")
 
 
 
@@ -1327,46 +1431,7 @@ Fig90 <- read_excel(
   mutate(across(2:7, as.numeric))
 
 
-test.6(Fig90, OVERALL_types, COLS = 2:7)
-
-
-
-
-test.6 <-function(DF, X, COLS){
-
-  cols <- c("#B9B386","#DB7D15", "#B36611", "#808080", "#F5C592","#0071C0")
-  breaks <- c("Natural", "Cropland", "Plantation","Built up","Mine", "Artificial waterbody")
-  ord <-   DF %>%
-    dplyr::pull({{X}})
-
-  dat <- DF %>%
-    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
-    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-    mutate(across(COUNT, ~na_if(., 0))) %>%
-    mutate(FILL = factor(FILL, levels = breaks))
-
-
-  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
-    ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
-    ggplot2::ylab("Percentage extent in each land cover category") +
-    ggplot2::xlab("") + ## remove the heading for the y-axis
-    ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-    ggplot2::labs(fill = "") + ## change the legend title here
-    ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-    ggplot2::theme_minimal() +
-    ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                   panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                   axis.line = element_blank(), # remove all x-axis grid lines
-                   panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                   legend.text = element_text(size = 8), # change legend text size
-                   plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                   plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-    ggplot2::coord_flip()  # flip the orientation of the chart
-
-}
-
+test(Fig90, OVERALL_types, COLS = 2:7, TYP = "EXT", CHRT = "bar" )
 
 
 #####################################################################################
