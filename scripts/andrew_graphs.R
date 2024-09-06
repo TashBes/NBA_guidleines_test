@@ -26,6 +26,7 @@ library("cowplot")
 ### functions
 
 test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GRP = TRUE){
+
   cols <- c("#6e9fd4",
             "#6e9fd4",
             "#a5c5c7",
@@ -116,7 +117,7 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
 
       ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
         ggplot2::geom_rect() +
-        facet_wrap(vars({{X}}))+
+        facet_wrap(vars({{GROUPS}}))+
         ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
         ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
         ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
@@ -273,7 +274,12 @@ Fig1c <- read_excel(
   mutate(across(2:5, as.numeric))
 
 
-test(Fig1c, `OVERALL types`, 2:5,  TYP = "FG", CHRT = "bar")
+test(Fig1c,
+     `OVERALL types`,
+     2:5,
+     CHRT = "bar",
+     NUM = T,
+     LAB = "Percentage of ecosystem types")
 
 
 ###
@@ -289,7 +295,11 @@ Fig1d <- read_excel(
 
 
 
-test(Fig1d, OVERALL_types, 2:5, TYP = "SPP", CHRT = "bar")
+test(Fig1d,
+     OVERALL_types,
+     2:5,
+     CHRT = "bar",
+     LAB = "Percentage of taxon types")
 
 
 ###
@@ -305,7 +315,12 @@ Fig4a <- read_excel(
 
 
 
-p <- test(Fig4a, `OVERALL types`,2:5, TYP = "FG", CHRT = "bar")
+p <- test(Fig4a,
+          `OVERALL types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
 
 #add_rec <- function(GRAPH, CAT1, ..., X%)
 
@@ -326,7 +341,12 @@ Fig4b <- read_excel(
   mutate(across(2:6, as.numeric))
 
 
-p <- test(Fig4b, `OVERALL types`, 2:5, TYP = "FG", CHRT = "bar")
+p <- test(Fig4b,
+          `OVERALL types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
 
 p +
   annotate("rect", xmin =2.5, xmax = 3.5, ymin = -1, ymax = 18.5,alpha = 0, color= "black",linewidth = 1.5)+
@@ -479,7 +499,10 @@ Fig27 <- read_excel(
   mutate(across(2:5, as.numeric))
 
 
-test(Fig27,`...1`, 2:4, TYP = "EXT", CHRT = "bar")
+test(Fig27,`...1`,
+     2:4,
+     LAB = "Percentage of ecosystem extent",
+     CHRT = "bar")
 
 
 ###
@@ -702,7 +725,14 @@ Fig53 <- read_excel(
   select(1:5)
 
 
-test(Fig53, `OVERALL types`, 2:5, TYP = "FG", GRP = T, CHRT = "donut")
+test(Fig53,
+     `OVERALL types`,
+     2:5,
+     NUM = TRUE,
+     LAB = "Threat status",
+     GRP = T,
+     CHRT = "donut")
+
 
 
 
@@ -797,7 +827,12 @@ Fig58mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig58mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
+test(Fig58mapinset,
+     `OVERALL types`,
+     COLS = 2:5,
+     TYP = "FG",
+     GRP = T,
+     CHRT = "donut")
 
 
 ###
