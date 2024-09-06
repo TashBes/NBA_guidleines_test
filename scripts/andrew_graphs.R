@@ -37,6 +37,7 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
             "#80a952",
             "#d5dec3",
             "#a4a3a3",
+            "#a4a3a3",
             "black",
             "#e9302c",
             "#f97835",
@@ -50,6 +51,7 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
             "#808080",
             "#F5C592",
             "#0071C0")
+
   breaks <- c("Natural",
               "Natural/near-natural",
               "Near-natural",
@@ -60,6 +62,7 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
               "Moderately Protected",
               "Poorly Protected",
               "No Protection",
+              "Not Protected",
               "Extinct",
               "Critically Endangered",
               "Endangered",
@@ -85,16 +88,17 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
         summarise(COUNT = sum(COUNT, na.rm = T))  %>%
         mutate(FILL = factor(FILL, levels = breaks))%>%
         dplyr::mutate(ymax = cumsum(COUNT)) %>%
-        dplyr::mutate(ymin = ymax -COUNT)
+        dplyr::mutate(ymin = ymax -COUNT) %>%
+        ungroup()
 
 
       ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
         ggplot2::geom_rect() +
-        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
+        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
         ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
         ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = {{LAB}}) +
+        ggplot2::labs(fill = LAB) +
         ggplot2::theme_void() + ## removes the lines around chart and grey background
         ggplot2::theme(
           panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
@@ -118,11 +122,11 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
       ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
         ggplot2::geom_rect() +
         facet_wrap(vars({{GROUPS}}))+
-        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 1) +  ## Add this line to include count values
+        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
         ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
         ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = {{LAB}}) +
+        ggplot2::labs(fill = LAB) +
         ggplot2::theme_void() + ## removes the lines around chart and grey background
         ggplot2::theme(
           panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
@@ -522,8 +526,17 @@ EXT <- Fig28ab%>%
   slice(11:18)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`OVERALL types`, 2:5, TYP = "FG", CHRT = "bar")
-b <- test(EXT,`OVERALL types`, 2:5, TYP = "EXT", CHRT = "bar")
+a <- test(FG,
+          `OVERALL types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
+b <- test(EXT,
+          `OVERALL types`,
+          2:5,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem extent")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -552,7 +565,10 @@ Fig30 <- read_excel(
          `Least Concern` = `Least Concern...9`) %>%
   select(1:10)
 
-test(Fig30,Realm, 2:9, TYP = "SPP", CHRT = "bar")
+test(Fig30,Realm,
+     2:9,
+     CHRT = "bar",
+     LAB = "Percentage of taxon types")
 
 
 ###
@@ -594,9 +610,17 @@ EXT <- Fig34ab%>%
   slice(11:18)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`OVERALL types`, 2:5, TYP = "FG", CHRT = "bar")
-b <- test(EXT,`OVERALL types`, 2:5, TYP = "EXT", CHRT = "bar")
-
+a <- test(FG,
+          `OVERALL types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
+b <- test(EXT,
+          `OVERALL types`,
+          2:5,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem extent")
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
           label_size = 8,
@@ -626,8 +650,17 @@ EXT <- Fig40ab%>%
   slice(14:24)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`TERR types`, 2:5, TYP = "FG", CHRT = "bar")
-b <- test(EXT,`TERR types`, 2:5, TYP = "EXT", CHRT = "bar")
+a <- test(FG,
+          `TERR types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
+b <- test(EXT,
+          `TERR types`,
+          2:5,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem extent")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -646,7 +679,12 @@ Fig42 <- read_excel(
       recursive = T))%>%
   slice_head(n =11)
 
-test(Fig42,`TERR types`, 2:5, TYP = "FG", CHRT = "bar")
+test(Fig42,
+     `TERR types`,
+     2:5,
+     NUM = T,
+     CHRT = "bar",
+     LAB = "Percentage of ecosystem types")
 
 
 
@@ -669,7 +707,12 @@ Fig48ab <- read_excel(
   slice_head(n =11)
 
 
-test(Fig42,`TERR types`, 2:5, TYP = "FG", CHRT = "bar")
+# test(Fig48ab,
+#      `TERR types`,
+#      2:5,
+#      NUM = T,
+#      CHRT = "bar",
+#      LAB = "Percentage of ecosystem types")
 
 
 ###
@@ -687,8 +730,11 @@ Fig51 <- read_excel(
   pivot_wider(names_from = `River Condition % length`)
 
 
-test(Fig51,OVERALL_types , 2:4, TYP = "EXT", CHRT = "bar")
-
+test(Fig51,
+     OVERALL_types,
+     2:4,
+     CHRT = "bar",
+     LAB = "Percentage of ecosystem extent")
 
 ###
 ### Fig52
@@ -706,7 +752,11 @@ Fig52 <- read_excel(
   mutate(across(2:4, as.numeric))
 
 
-test(Fig52,OVERALL_types , 2:4, TYP = "EXT", CHRT = "bar")
+test(Fig52,
+     OVERALL_types,
+     2:4,
+     CHRT = "bar",
+     LAB = "Percentage of ecosystem extent")
 
 
 ###
@@ -730,7 +780,7 @@ test(Fig53,
      2:5,
      NUM = TRUE,
      LAB = "Threat status",
-     GRP = T,
+     GRP = F,
      CHRT = "donut")
 
 
@@ -757,14 +807,26 @@ EXT <- Fig54ab%>%
   slice(8:12)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`RIVER types`, 2:5, TYP = "FG", CHRT = "bar")
-b <- test(EXT,`RIVER types`, 2:5, TYP = "EXT", CHRT = "bar")
+
+a <- test(FG,
+          `RIVER types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
+b <- test(EXT,
+          `RIVER types`,
+          2:5,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem extent")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
           label_size = 8,
           label_fontface = "plain",
           ncol = 2)
+
+
 ###
 ### Fig55mapinset
 
@@ -780,7 +842,7 @@ Fig55mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig55mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
+test(Fig55mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut", LAB = "Threat status")
 
 
 
@@ -802,8 +864,18 @@ EXT <- Fig56%>%
   slice(8:12)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,`WETLAND types`, 2:5, TYP = "FG", CHRT = "bar")
-b <- test(EXT,`WETLAND types`, 2:5, TYP = "EXT", CHRT = "bar")
+
+a <- test(FG,
+          `WETLAND types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
+b <- test(EXT,
+          `WETLAND types`,
+          2:5,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem extent")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -830,9 +902,10 @@ Fig58mapinset <- read_excel(
 test(Fig58mapinset,
      `OVERALL types`,
      COLS = 2:5,
-     TYP = "FG",
+     NUM = T,
      GRP = T,
-     CHRT = "donut")
+     CHRT = "donut",
+     LAB = "Protection level")
 
 
 ###
@@ -853,8 +926,18 @@ EXT <- Fig59ab%>%
   slice(8:12)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test(FG,`RIVER types`, 2:5, TYP = "FG", CHRT = "bar")
-b <- test(EXT,`RIVER types`, 2:5, TYP = "EXT", CHRT = "bar")
+
+a <- test(FG,
+          `RIVER types`,
+          2:5,
+          NUM = T,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem types")
+b <- test(EXT,
+          `RIVER types`,
+          2:5,
+          CHRT = "bar",
+          LAB = "Percentage of ecosystem extent")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -878,7 +961,7 @@ Fig61mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig61mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
+test(Fig61mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut", LAB = "Protection level")
 
 
 ###
@@ -967,7 +1050,7 @@ EXT <- Fig69ab%>%
   slice(7:11)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG, `Biogeographical region`, 2:6, TYP = "FG", CHRT = "bar")
+a <- test(FG, `Biogeographical region`, 2:6, NUM = T, CHRT = "bar")
 b <- test(EXT, `Biogeographical region`, 2:6, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
@@ -998,7 +1081,7 @@ EXT <- Fig71ab%>%
   slice(7:11)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test(FG, `Biogeographical region`, 2:5, TYP = "FG", CHRT = "bar")
+a <- test(FG, `Biogeographical region`, 2:5, NUM = T, CHRT = "bar")
 b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
@@ -1027,7 +1110,7 @@ EXT <- Fig73ab%>%
   slice(8:12)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test(FG, `Biogeographical region`, 2:5, TYP = "FG", CHRT = "bar")
+a <- test(FG, `Biogeographical region`, 2:5, NUM = T, CHRT = "bar")
 b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT", CHRT = "bar")
 
 plot_grid(a,b,
@@ -1051,7 +1134,7 @@ Fig74 <- read_excel(
   mutate(across(2:8, as.numeric))
 
 
-test(Fig74, OVERALL_types, 2:8, TYP = "FG", CHRT = "bar")
+test(Fig74, OVERALL_types, 2:8, NUM = T, CHRT = "bar")
 
 
 ###
@@ -1064,7 +1147,7 @@ Fig84 <- read_excel(
       recursive = T))
 
 
-test(Fig84, `2019 MPAs`, 2:5, TYP = "FG", CHRT = "bar")
+test(Fig84, `2019 MPAs`, 2:5, NUM = T, CHRT = "bar")
 
 
 
@@ -1155,11 +1238,11 @@ EXT2 <- Fig92abcd%>%
          Vulnerable = `VU...22`,
          `Least Concern` = `LC...23`)
 
-a <- test(FG1, `Coast RLE types...1`, 2:4, TYP = "FG", CHRT = "bar")
+a <- test(FG1, `Coast RLE types...1`, 2:4, NUM = T, CHRT = "bar")
 a
 b <- test(EXT1, `Coast RLE extent`, 2:4, TYP = "EXT", CHRT = "bar")
 b
-c <- test(FG2, `Coast RLE types...13`, 2:4, TYP = "FG", CHRT = "bar")
+c <- test(FG2, `Coast RLE types...13`, 2:4, NUM = T, CHRT = "bar")
 c
 d <- test(EXT2, `...19`, 2:4, TYP = "EXT", CHRT = "bar")
 d
@@ -1213,11 +1296,11 @@ EXT2 <- Fig93abcd%>%
          `Poorly Protected` = `PP...22`,
          `No Protection` = `NP...23`)
 
-a <- test(FG1, `...1`, 2:4, TYP = "FG", CHRT = "bar")
+a <- test(FG1, `...1`, 2:4, NUM = T, CHRT = "bar")
 a
 b <- test(EXT1, `...7`, 2:4, TYP = "EXT", CHRT = "bar")
 b
-c <- test(FG2, `...13`, 2:4, TYP = "FG", CHRT = "bar")
+c <- test(FG2, `...13`, 2:4, NUM = T, CHRT = "bar")
 c
 d <- test(EXT2, `...19`, 2:4, TYP = "EXT", CHRT = "bar")
 d
@@ -1244,7 +1327,7 @@ Fig98mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig98mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
+test(Fig98mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut")
 
 
 
@@ -1263,7 +1346,7 @@ Fig99mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig99mapinset, `OVERALL types`, COLS = 2:5, TYP = "FG", GRP = T, CHRT = "donut")
+test(Fig99mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut")
 
 
 
