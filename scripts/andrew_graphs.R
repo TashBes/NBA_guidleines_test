@@ -25,7 +25,7 @@ library("cowplot")
 #####################################################################################
 ### functions
 
-test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END"), CHRT = c("bar", "donut"), GRP = FALSE){
+test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GRP = TRUE){
   cols <- c("#6e9fd4",
             "#6e9fd4",
             "#a5c5c7",
@@ -93,7 +93,7 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END"), CHRT = c("bar"
         ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
         ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = "Threat Status") +
+        ggplot2::labs(fill = {{LAB}}) +
         ggplot2::theme_void() + ## removes the lines around chart and grey background
         ggplot2::theme(
           panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
@@ -108,10 +108,10 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END"), CHRT = c("bar"
       ## Prepare the data frame by arranging and setting colors
       dat <- DF %>%
         pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-        mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+        mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
         mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
         mutate(FILL = factor(FILL, levels = breaks))%>%
-        dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{X}}) %>%
+        dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{GROUPS}}) %>%
         dplyr::mutate(ymin = ymax -PERCENTAGE)
 
       ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
@@ -121,7 +121,7 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END"), CHRT = c("bar"
         ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
         ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = "Threat Status") +
+        ggplot2::labs(fill = {{LAB}}) +
         ggplot2::theme_void() + ## removes the lines around chart and grey background
         ggplot2::theme(
           panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
@@ -131,23 +131,24 @@ test <-function(DF, X, COLS, TYP = c("FG", "EXT", "TAXA", "END"), CHRT = c("bar"
   }
 
 
+## if chart is bar:
 else {
 
   ord <-   DF %>%
-    dplyr::pull({{X}})
+    dplyr::pull({{GROUPS}})
 
   dat <- DF %>%
     pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-    mutate(TOT = sum(COUNT, na.rm = T), .by = {{X}} )%>%
+    mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
     mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
     mutate(across(COUNT, ~na_if(., 0))) %>%
     mutate(FILL = factor(FILL, levels = breaks))
 
-  if(TYP == "FG"){
+  if(NUM == TRUE){
 
 
 
-  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{GROUPS}}, level = ord), fill = FILL)) +
     ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
     ggplot2::geom_text(aes(label = COUNT),
                        position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
@@ -155,7 +156,7 @@ else {
                        color = "black",
                        show.legend = FALSE) + # adjust size of labels with no legend being shown
     ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
-    ggplot2::ylab("Percentage of ecosystem types") +
+    ggplot2::ylab({{LAB}}) +
     ggplot2::xlab("") + ## remove the heading for the y-axis
     ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
     ggplot2::labs(fill = "") + ## change the legend title here
@@ -171,14 +172,13 @@ else {
     ggplot2::coord_flip()  # flip the orientation of the chart
   }
 
+  ## if NUM == FALSE
   else {
 
-    if(TYP == "EXT"){
-
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
+      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{GROUPS}}, level = ord), fill = FILL)) +
         ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
         ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-        ggplot2::ylab("Percentage of ecosystem extent") +
+        ggplot2::ylab({{LAB}}) +
         ggplot2::xlab("") + ## remove the heading for the y-axis
         ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
         ggplot2::labs(fill = "") + ## change the legend title here
@@ -192,58 +192,10 @@ else {
                        plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
                        plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
         ggplot2::coord_flip()  # flip the orientation of the chart
-    }
-
-      else {
-
-        if(TYP == "TAXA"){
-
-        ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
-          ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-          ggplot2::ylab("Percentage of taxa") +
-          ggplot2::xlab("") + ## remove the heading for the y-axis
-          ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-          ggplot2::labs(fill = "") + ## change the legend title here
-          ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-          ggplot2::theme_minimal() +
-          ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                         panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                         axis.line = element_blank(), # remove all x-axis grid lines
-                         panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                         legend.text = element_text(size = 8), # change legend text size
-                         plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                         plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-          ggplot2::coord_flip()  # flip the orientation of the chart
-      }
-
-        else {
-
-          ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{X}}, level = ord), fill = FILL)) +
-            ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-            ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-            ggplot2::ylab("Percentage of endemic taxa") +
-            ggplot2::xlab("") + ## remove the heading for the y-axis
-            ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-            ggplot2::labs(fill = "") + ## change the legend title here
-            ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-            ggplot2::theme_minimal() +
-            ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                           panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                           axis.line = element_blank(), # remove all x-axis grid lines
-                           panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                           legend.text = element_text(size = 8), # change legend text size
-                           plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                           plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-            ggplot2::coord_flip()  # flip the orientation of the chart
-
-        }
-
-      }
-
   }
 }
 }
+
 
 
 test.2 <- function(DF,YEAR, RLI, min, max){
@@ -282,7 +234,12 @@ Fig1a <- read_excel(
   slice_head(n =8) %>%
   mutate(across(2:6, as.numeric))
 
-test(Fig1a, `OVERALL types`, 2:5,  TYP = "FG", CHRT = "bar")
+test(Fig1a,
+     `OVERALL types`,
+     2:5,
+     CHRT = "bar",
+     NUM = TRUE,
+     LAB = "Percentage of ecosystem types")
 
 
 ###
@@ -298,7 +255,11 @@ Fig1b <- read_excel(
   pivot_wider(names_from = `Red List Category`)
 
 
-test(Fig1b, OVERALL_types, 2:5,  TYP = "SPP", CHRT = "bar")
+test(Fig1b,
+     OVERALL_types,
+     2:5,
+     CHRT = "bar",
+     LAB = "Percentage of taxon types")
 
 ###
 ### fig 1.c
