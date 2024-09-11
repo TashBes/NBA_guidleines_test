@@ -21,7 +21,8 @@ library(kableExtra)
 bird_data <- data.frame(
   Species = c("African Fish Eagle", "Saddle-billed Stork", "Kori Bustard", "Secretary Bird", "Crowned Crane"),
   Habitat = c("Wetland", "Savanna", "Grassland", "Savanna", "Wetland"),
-  Status = c("Least Concern", "Near Threatened", "Vulnerable", "Endangered", "Critically Endangered")
+  Status = c("Least Concern", "Near Threatened", "Vulnerable", "Endangered", "Critically Endangered"),
+  test = c(1, 2, 3, 4, 5)
 )
 
 ### Create a formatted table for basic data tables
