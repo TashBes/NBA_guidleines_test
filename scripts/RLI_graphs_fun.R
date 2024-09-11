@@ -31,7 +31,10 @@ RLI_graph <- function(DF,YEAR, RLI, min, max){
 
 }
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> bdf575ff0ecd73172f2ebcb1868cb94165672c6d
 ### covers fig 32 ###
 RLI_graph_2 <- function(DF,YEAR, RLI, min, max, GROUP){
   ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}}, group = {{GROUP}}, color = {{GROUP}})) +
