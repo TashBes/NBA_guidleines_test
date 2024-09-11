@@ -8,4 +8,5 @@ Action items:
 3. Decide on table functions
 4. Look at GitLab restrictions
 5. create GitLab accounts for each 
+6. create guideline for input data
 
