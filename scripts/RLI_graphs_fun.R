@@ -16,7 +16,19 @@
 
 library(ggplot2)
 
-RLI_graph <- function(DF,YEAR, RLI, min, max){
+RLI_graph <- function(DF,YEAR, RLI, min, max, GRP = FALSE){
+
+  if(GRP == TRUE){
+
+    ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}}, group = {{GROUP}}, color = {{GROUP}})) +
+      ggplot2::geom_line(linetype="dashed") +
+      ggplot2::geom_ribbon(aes(ymin = {{min}}, ymax = {{max}}), fill = "grey", alpha = .2, colour = NA)+
+      ggplot2::theme_classic()+
+      ggplot2::ylim(0.7,1)
+
+  }
+  else {
+
   ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}})) +
     ggplot2::geom_line(aes(y = {{RLI}})) +
     ggplot2::geom_ribbon(aes(ymin = {{min}}, ymax = {{max}}),alpha = .3, colour = NA)+
@@ -24,6 +36,7 @@ RLI_graph <- function(DF,YEAR, RLI, min, max){
     ggplot2::ylim(0.7,1)
 
 
+  }
 }
 
 
