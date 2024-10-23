@@ -21,7 +21,7 @@ library(NBA.package)
 library("cowplot")
 
 # source("functions/packages.R")       # loads up all the packages we need
-#devtools::install_github("TashBes/NBA.package")
+devtools::install_github("TashBes/NBA.package")
 #####################################################################################
 ### functions
 
@@ -239,6 +239,14 @@ Fig1a <- read_excel(
   slice_head(n =8) %>%
   mutate(across(2:6, as.numeric))
 
+NBA.package::NBA_plot(Fig1a,
+                      `OVERALL types`,
+                      2:5,
+                      CHRT = "bar",
+                      NUM = TRUE,
+                      LAB = "Percentage of ecosystem types",
+                      SAVE = "Fig1a")
+
 test(Fig1a,
      `OVERALL types`,
      2:5,
@@ -319,12 +327,13 @@ Fig4a <- read_excel(
 
 
 
-p <- test(Fig4a,
+p <- NBA_plot(Fig4a,
           `OVERALL types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig4a")
 
 #add_rec <- function(GRAPH, CAT1, ..., X%)
 
