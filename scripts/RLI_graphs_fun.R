@@ -40,13 +40,3 @@ RLI_graph <- function(DF,YEAR, RLI, min, max, GRP = FALSE){
 }
 
 
-
-### covers fig 32 ###
-RLI_graph_2 <- function(DF,YEAR, RLI, min, max, GROUP){
-  ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}}, group = {{GROUP}}, color = {{GROUP}})) +
-    ggplot2::geom_line(linetype="dashed") +
-    ggplot2::geom_ribbon(aes(ymin = {{min}}, ymax = {{max}}), fill = "grey", alpha = .2, colour = NA)+
-    ggplot2::theme_classic()+
-    ggplot2::ylim(0.7,1)
-}
-
