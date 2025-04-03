@@ -1,0 +1,515 @@
+---
+title: "Summary results of the Red List of Ecosystems"
+subtitle: "Terrestrial Realm"
+author: 
+- name: Maphale Monyeki & Dr Andrew Skowno
+  affiliation: South African National Biodiversity Institute 
+date: last-modified
+date-format: "DD-MM-YYYY"
+bibliography: references.bib
+
+output:
+  flexdashboard::flex_dashboard:
+   orientation:rows
+
+format: 
+  html:
+    linestretch: 1.7
+    embed-resources: true
+    smooth-scroll: true
+    fontcolor: black
+    code-fold: false 
+    code-tools: false
+
+editor: visual
+css: styles.css
+---
+
+```{css, echo = FALSE, eval = FALSE}
+
+.quarto-title > h1.title {
+  opacity: 0 !important;
+}
+
+```
+
+```{=html}
+<style type="text/css">
+
+h1{
+  font-size: 16px;
+  margin-top:15px;
+  margin-bottom:5px;
+}
+
+h2{
+  font-size: 14.5px;
+  margin: 0;
+}
+
+h3{
+  font-size: 13.5px;
+   margin: 0;
+}
+
+h4{
+  font-size: 13px;
+   margin: 0;
+}
+
+body{ /* Normal  */
+  font-size: 13.5px;
+  line-height: 2;
+  font-family: Arial
+   margin: 9;
+}
+
+</style>
+```
+```{css, echo = FALSE}
+
+.title {
+  font-weight: bold;
+  font-size: 25px;
+  color: olive;
+  font-family: Arial;
+ }
+ 
+```
+
+```{css, echo = FALSE}
+
+.subtitle {
+  font-size: 17px;
+  font-weight: bold;
+  color: olive;
+  font-family: Arial;
+ }
+ 
+```
+
+```{css, echo = FALSE, eval = FALSE}
+
+.description {
+  font-size: 20px;
+  color: olive;
+  font-family: Arial;
+ }
+ 
+```
+
+```{css, echo = FALSE}
+
+/* specify the background color of the code chunks*/
+
+<style>
+div.honeydew pre { background-color:honeydew; }
+div.honeydew pre.r { background-color:honeydew; }
+</style>
+
+```
+
+```{css, echo = FALSE}
+
+/*scroll bar height of the long code chunks*/
+
+.scrolling {
+  max-height: 400px;
+  overflow-y: auto;
+}
+```
+
+```{css, echo = FALSE}
+
+/*scroll bar width of the wide code chunks*/
+
+.scrolling {
+  max-width: 1000px;
+  overflow-x: auto;
+}
+```
+
+```{css, echo = FALSE}
+
+/*adjust the font size of the datatable*/
+
+table.dataTable td {
+  font-size: 0.9em;
+}
+
+```
+
+```{css, echo = FALSE}
+
+table.dataTable tr.dtrg-level-0 td {
+  font-size: 0.9em;
+}
+
+```
+
+```{r, warning = FALSE, message = FALSE, echo=FALSE}
+
+# knit
+library(kableExtra)
+library(knitr)
+
+# Data wrangling
+library(tidyverse)
+library(dplyr)
+library(stringr)
+library(stringi)
+library(collapse)
+library(ggplot2)
+
+# spatial data
+library(sp)
+library(raster)
+library(maptools)
+library(rgdal)
+library(redlistr)
+library(leaflet)
+library(sf)
+library(rgeos)
+library(tmap)
+
+# Displaying Dataframes & piping
+library(DT)
+library(magrittr)
+library(readxl)
+library(foreign)
+
+# Create a gt Dataframe object
+library(gt)
+```
+
+```{r data, include = FALSE}
+
+setwd("C:/Maphale Monyeki Projects/R Projects/3. ShinyApps/Applications/R/ShnyAppNational")
+HM60 <- raster("HM60_NotNatural.tif")
+Province <- sf::read_sf("Province_New_SANeighbours_Albs.shp")
+Excl_SA <- sf::read_sf("Lesotho_eSwatini.shp")
+EcoMap <- sf::read_sf("RLE_2022_webmap_version_Disslv.shp") %>% 
+          mutate(RLE2022 = ordered(factor(RLE2022, levels = c("CR", "EN", "VU", "LC"))))
+
+RLE <- read_excel("RLE20210511_Full_dataset.xlsx", sheet = "FULL RLE2021")
+BiomeSummary <- read_excel("BiomeStats.xlsx", sheet = 1)
+
+```
+
+# **1. Overall summary results**
+
+<p>
+
+The first implementation of the IUCN Red List of Ecosystems for South Africa resulted in 120 of the 456 terrestrial ecosystem types (26%) being categorised as threatened: 51 Critically Endangered, 55 Endangered and 14 Vulnerable ecosystem types (Table 1, Figure 1a). Of the 456 terrestrial ecosystem types occurring in South Africa, 51 were categorised as Critically Endangered, 55 as Endangered, and 14 as Vulnerable (Table 1, Figure 1a). While 11% of the ecosystem types are Critically Endangered, in terms of area, this amounts to less than one percent of the extent of natural remaining habitat in South Africa. Endangered ecosystems make up 12% of ecosystems by type, and by area make up 5% of natural remaining habitat. Vulnerable ecosystems make up 3% of ecosystems by type, amounting to 4% of the natural remaining habitat of South Africa (Table 1, Figure 1b).
+
+```{r, fig.height= 4, fig.width = 10, fig.align = 'center', echo = FALSE, warning = FALSE, message = FALSE, cache = TRUE}
+
+tmap_options(check.and.fix = TRUE)
+#tmap_mode("view")
+
+names(EcoMap)[names(EcoMap) == "RLE2022"] = "Red List of Ecosystems Category" 
+
+a <- tm_shape(EcoMap) +
+    tm_fill("Red List of Ecosystems Category", 
+            palette = c("red","orange","yellow","#B4D79E"),
+            legend.show = FALSE) +
+  
+tm_shape(Excl_SA) +
+  tm_fill("white") +
+tm_shape(Province) +
+  tm_borders(col='black', 
+             lwd = 0.7) +
+tm_layout(main.title = "Figure 1a: Map showing the distribution of threatened terrestrial\n ecosystem types in their historical extent",
+            main.title.position = "left",
+            main.title.size = 0.9,
+            frame = TRUE) +
+tm_grid(lwd = 0.05, 
+        alpha = 0.2, 
+        labels.show = FALSE) +
+tm_compass(type="arrow",
+           position = c("right", "bottom"), 
+           size = 0.7) +  
+tm_layout(frame = FALSE)
+
+
+
+
+b <- tm_shape(EcoMap) + 
+        tm_fill("Red List of Ecosystems Category", 
+            palette = c("red","orange","yellow","#B4D79E"),
+            labels = c("Critically Endangered", "Endangered", "Vulnerable", "Least Concern", "Not nutaral"),
+            legend.show = TRUE) +
+
+tm_shape(HM60) +
+	tm_raster(style = "cont", 
+	          palette = "gray97",
+	          labels = "Not Natural",
+	          title = "",
+	          colorNA = NULL) +
+  
+tm_shape(Excl_SA) +
+  tm_fill("white") +
+  
+tm_shape(Province) +
+  tm_borders(col='black',
+           lwd = 0.75) +
+  
+tm_layout(main.title = "Figure 1b: Map showing the modified natural patches",
+          main.title.position = "left",
+          main.title.size = 0.9,
+          legend.text.size = 0.7,
+          legend.title.size = 0.9,
+          #legend.outside = TRUE,
+          frame = TRUE) +
+tm_grid(lwd = 0.05, 
+        alpha = 0.2, 
+        labels.show = FALSE) +
+tm_scale_bar(position = c("right", "bottom"), 
+             width = 5, 
+             size = 5) +
+  
+tm_layout(frame = FALSE) 
+
+tmap_arrange(a, b)
+
+```
+
+```{r calculations, echo = FALSE, warning = FALSE, message = FALSE}
+
+names(RLE)[3] <- "Biome"
+
+RLE <- RLE %>%
+             mutate (RLE2022 =
+                     ifelse(RLE2021May == "CR","Critically Endangered",
+                     ifelse(RLE2021May == "EN","Endangered",
+                     ifelse(RLE2021May == "VU","Vulnerable", "Least Concern"))))
+
+RLE <- RLE %>% 
+      mutate(RLE2022 = ordered(factor(RLE2022, levels = c("Least Concern", "Vulnerable", "Endangered", "Critically Endangered")))) %>%
+      filter(!is.na(RLE2022))
+
+Biome_RLEcount <- RLE %>% 
+              group_by(Biome, RLE2022) %>% 
+              summarise(Count = n())
+
+Biome_areakm2 <- RLE %>%
+                 group_by(Biome, RLE2022) %>% 
+                 summarise(Nat2018km2 = sum(Nat2018))
+
+```
+
+```{r summary table, echo = FALSE, warning = FALSE, message = FALSE}
+
+Datasets <- matrix(nrow = 4, ncol = 5)
+colnames(Datasets) <- c("Category (IUCN RLE)", "Number of Ecosystems", "Natural Extent Remaining within South Africa in 2018 (km2)", "Percentage of Total Terrestrial Landmass Extent", "Percentage of Total Natural Remaining Ecosystem Extent")
+
+Datasets[1,] <- c("Critically Endangered", "51", "7 508.21", "0.62%", "0.79%")
+Datasets[2,] <- c("Endangered", "55", "52 827.25", "4.13%", "5%")
+Datasets[3,] <- c("Vulnerable", "14", "35 719.48", "2.90%", "3.72%")
+Datasets[4,] <- c("Least Concern", "338", "88 9032.16", "70.39%", "90.20%")
+table <- gt(Datasets, rowname_col = "row", groupname_col = "group")
+
+table %>%
+    opt_row_striping() %>% 
+
+  tab_header(
+    title = "Table 1: Summary of the assessment outcomes including the number of ecosystem types per category and the proportion of
+the natural area remaining per category",
+  ) %>%
+
+  tab_style( # align text cells
+    style = cell_text(align = "left", weight = "bold"), 
+    locations = cells_column_labels(vars("Category (IUCN RLE)"))
+    ) %>% 
+  
+  tab_style( # align text cells
+    style = cell_text(align = "center", weight = "bold"),
+    locations = cells_column_labels(vars("Number of Ecosystems", "Natural Extent Remaining within South Africa in 2018 (km2)", "Percentage of Total Terrestrial Landmass Extent", "Percentage of Total Natural Remaining Ecosystem Extent"))
+    ) %>%
+  
+  tab_style( # align text cells
+    style = cell_text(align = "center"), 
+    locations = cells_body(vars("Number of Ecosystems", "Natural Extent Remaining within South Africa in 2018 (km2)", "Percentage of Total Terrestrial Landmass Extent", "Percentage of Total Natural Remaining Ecosystem Extent"))
+    ) %>% 
+  
+   tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = "Category (IUCN RLE)")
+  ) %>%
+
+  # changing font size and title position
+   tab_options(
+    heading.align = 'left',
+    table.width = pct(90),
+    table.background.color = "#FFFFFF00", # transparent background 
+    table.font.color = "black",
+    table.font.size = px(13L),
+    table.border.top.width = 4,
+    data_row.padding = px(13), # increase row length
+    heading.title.font.size = px(12),
+  ) %>%   
+  
+  cols_width(
+    "Category (IUCN RLE)" ~ px(35),
+    "Natural Extent Remaining within South Africa in 2018 (km2)" ~ px(40),
+    everything() ~ px(37)
+  ) 
+
+```
+
+# **2. Results per biome**
+
+<p>
+
+The Fynbos biome (a winter-rainfall, fire-prone shrubland with high plant diversity and endemism) has the highest number of threatened ecosystem types (59), followed by Grassland (which occupies the interior plateau known as the Highveld) with 24 and Savanna (a range of trophic and pyric savanna types covering the north-eastern third of the country) with 13 threatened types. These threatened ecosystem types make up 23%, 29%, and 4%, respectively of the natural remaining habitat of each biome (Figures 1a and 1b, Table 1). All six ecosystem types making up the Indian Ocean Coastal Belt biome (a unique combination of forest, woodland, and grassy communities situated on the subtropical east coast) are threatened, which means that 100% of the natural habitat remaining in the biome is threatened. The arid regions of the country have less threatened ecosystems (by type and by remaining extent); the Succulent Karoo (an exceptionally diverse winter-rainfall arid shrubland) has three threatened ecosystems (amounting to 0.8% of the natural remaining habitat) and the Nama-Karoo (a summer rainfall arid shrubland) has no threatened ecosystems. The Forest biome covers less than 1% of South Africa, and one threatened ecosystem type was identified. This is likely due to a mismatch in the scale of the land cover change data and forest patches; additional research is required to better understand historical and current distribution of this biome. In addition, two forest types, namely Swamp Forest and Mangrove Forest, were not considered terrestrial and were excluded from this study; recent research suggests Swamp Forest may be Critically Endangered [Van Deventer *et al*., 2021](https://www.sciencedirect.com/science/article/pii/S1470160X21007421?via%3Dihub), while Mangroves have yet to be assessed.
+
+```{r results, echo = FALSE, results='asis', fig.height= 9, fig.width = 28, fig.align = 'left', warning=FALSE, message=FALSE, cache = TRUE}
+#********************************
+# Threatened ecosystem per biome
+#********************************
+
+
+
+Q <- ggplot(data = Biome_RLEcount, 
+            aes(y = Biome, 
+                x = Count,
+                fill = factor(RLE2022, levels = c("Least Concern", "Vulnerable", "Endangered", "Critically Endangered")))) +
+  
+  geom_bar(stat = "identity", 
+           position = "fill", 
+           width = .7) +  
+  
+  theme_minimal()  +
+  
+  geom_text(aes(label = Count), 
+            position = position_fill(vjust = .5), 
+            size = 6.5) +
+
+  
+  theme(text = element_text(size = 25)) +
+  labs(caption = "Figure 2a: Percentage of threatened ecosystems per biome",
+       x ="Percentage of ecosystem types", 
+       y = "Biomes") +
+  
+  scale_fill_manual(values= c("#B4D79E", "yellow","orange", "red"))#+                                              
+  #theme_minimal() 
+
+Q <- Q +  guides(fill = guide_legend(title = "Threat categories"))
+
+Q <- Q + theme(legend.key.height= unit(1, 'cm'),
+               legend.key.width= unit(0.9, 'cm'),
+               plot.caption = element_text(hjust = 0.2, size = 27), 
+                text = element_text(size = 25))
+
+#******************
+# Area per biome
+#******************
+
+R <- ggplot(Biome_areakm2, 
+            aes(x = Nat2018km2, 
+                y = Biome, 
+                fill = factor(RLE2022, levels = c("Least Concern", "Vulnerable", "Endangered", "Critically Endangered")))) +
+  
+  geom_bar(stat="identity", 
+           position = "fill", 
+           width = .7)+ 
+
+  geom_text(aes(label = Nat2018km2), 
+            size = 0, 
+            stat = "identity", 
+            position = position_fill(vjust = .5)) + 
+  
+  theme_minimal()  +
+  
+  labs(caption = "Figure 2b: Percentage of the total habitat remaining \nin each biome that falls within each threat categories",
+       x ="\nPercentage of ecosystem extent", 
+       y = "") +
+  
+  scale_fill_manual(values= c("#B4D79E", "yellow","orange", "red"))  # + 
+  
+         # theme_minimal() 
+
+R <- R  + theme(plot.caption = element_text(hjust = 0.2, size = 27), 
+                text = element_text(size = 25))
+
+R <- R + theme(legend.position = "none") 
+
+egg::ggarrange(Q, R, nrow = 1, ncol=2)
+
+```
+
+```{r Biome results, echo = FALSE, warning = FALSE, message = FALSE}
+
+Dataset <- matrix(nrow = 11, ncol = 7)
+colnames(Dataset) <- c("Biome", "Critically Endangered", "Endangered", "Vulnerable", "All threatened ecosystems", "Least Concern", "Grand Total")
+
+Dataset[1,] <- c("Azonal Vegetation", "0% (2)", "2.6% (3)", "0% (0)", "2.7% (5)", "97.3% (13)", "18")
+Dataset[2,] <- c("Succulent Karoo", "0.6% (3)", "1.9% (1)", "0% (0)", "2.4% (4)", "97.6% (60)", "64")
+Dataset[3,] <- c("Savanna", "0.3% (3)", "1.9% (7)", "1.7% (3)", "3.8% (13)", "96.2% (78)", "91")
+Dataset[4,] <- c("Nama-Karoo", "0% (0)", "0% (0)", "0% (0)", "0% (0)", "100% (13)", "13")
+Dataset[5,] <- c("Indian Ocean Coastal Belt", "0% (0)", "83.6% (5)", "16.4% (1)", "100% (6)", "0% (0)", "6")
+Dataset[6,] <- c("Grassland", "0.5% (4)", "16.2% (14)", "12.2% (6)", "28.9% (24)", "71.1% (49)", "73")
+Dataset[7,] <- c("Fynbos", "9.3% (33)", "13.3% (24)", "0.1% (2)", "22.7% (59)", "77.3% (63)", "122")
+Dataset[8,] <- c("Forests", "0% (0)", "0% (0)", "2.4% (1)", "2.3% (1)", "97.6% (9)", "10")
+Dataset[9,] <- c("Desert", "0.04% (2)", "0% (0)", "0% (0)", "0.04% (2)", "100% (13)", "15")
+Dataset[10,] <- c("Albany Thicket", "0.9% (4)", "1.6% (1)", "17.3% (1)", "19.8% (6)", "80.2% (38)", "44")
+Dataset[11,] <- c("Grand Total", "0.8% (51)", "5.3% (55)", "3.7% (14)", "9.8% (120)", "90.2% (338)", "456")
+
+table <- gt(Dataset, rowname_col = "row", groupname_col = "group")
+
+table %>%
+  opt_row_striping() %>% 
+    
+tab_header(
+    title = "Table 2: Percentage natural remaining habitat within each IUCN RLE threat category, listed per biome. The number of
+ecosystem types per threat category, per biome is shown in parenthesis.") %>%
+
+  
+  tab_style( # align text cells
+    style = cell_text(align = "center"), 
+    locations = cells_column_labels(vars("Critically Endangered", "Endangered", "Vulnerable", "All threatened ecosystems", "Least Concern", "Grand Total"))
+    ) %>%
+  
+  tab_style( # align text cells
+    style = cell_text(align = "center"), 
+    locations = cells_body(vars("Critically Endangered", "Endangered", "Vulnerable", "All threatened ecosystems", "Least Concern", "Grand Total"))
+    ) %>%
+  
+ tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_body(columns = Biome)
+  ) %>%
+
+
+  # changing font size and title position
+   tab_options(
+    heading.align = 'left',
+    table.width = pct(90),
+    column_labels.font.weight = "bold", # bold cells
+    table.background.color = "#FFFFFF00", # transparent background 
+    table.font.color = "black",
+    table.font.size = px(13L),
+    table.border.top.width = 4,
+    data_row.padding = px(13), # increase row length
+    heading.title.font.size = px(12),
+  ) %>% 
+  
+  cols_width(
+    "Biome" ~ px(50),
+    everything() ~ px(37)
+  )
+```
+
+```{r download, warning=FALSE, message=FALSE, echo=FALSE, eval=FALSE}
+
+list(RLE) %>%
+  downloadthis::download_this(
+    output_name = "RLE assessment",
+    output_extension = ".xlsx",
+    button_label = "Download RLE assessment results - xlsx",
+    button_type = "warning",
+    has_icon = TRUE,
+    icon = "fa fa-save"
+  )
+
+```

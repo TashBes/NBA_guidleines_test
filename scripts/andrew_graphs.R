@@ -20,11 +20,8 @@ library(readxl)
 library(NBA.package)
 library("cowplot")
 
-<<<<<<< HEAD
 #devtools::install_github("TashBes/NBA.package")
-=======
-# source("functions/packages.R")       # loads up all the packages we need
-devtools::install_github("TashBes/NBA.package")
+
 #####################################################################################
 ### functions
 
@@ -228,7 +225,6 @@ test.3 <- function(DF){
     kableExtra::add_header_above(c(" " = ncol(DF)), line = TRUE, line_sep = 3, color = "black") # black border around header
   table
 }
->>>>>>> 7377ad2234bbfad8eac501e65ec6bc707eb5cef4
 
 
 #####################################################################################
@@ -243,9 +239,7 @@ Fig1a <- read_excel(
   slice_head(n =8) %>%
   mutate(across(2:6, as.numeric))
 
-<<<<<<< HEAD
-NBA_plot(Fig1a,
-=======
+
 NBA.package::NBA_plot(Fig1a,
                       `OVERALL types`,
                       2:5,
@@ -255,7 +249,6 @@ NBA.package::NBA_plot(Fig1a,
                       SAVE = "Fig1a")
 
 test(Fig1a,
->>>>>>> 7377ad2234bbfad8eac501e65ec6bc707eb5cef4
      `OVERALL types`,
      2:5,
      CHRT = "bar",
@@ -946,7 +939,7 @@ NBA_plot(Fig58mapinset,
      `OVERALL types`,
      COLS = 2:5,
      NUM = T,
-     GRP = T,
+     GRP = F,
      CHRT = "donut",
      LAB = "Protection level",
      SAVE = "Fig58mapinset")
@@ -1515,7 +1508,7 @@ NBA_plot(Fig98mapinset,
          `OVERALL types`,
          COLS = 2:5,
          NUM = T,
-         GRP = T,
+         GRP = F,
          CHRT = "donut",
          LAB = "Threat status",
          SAVE = "Fig98mapinset")
@@ -1535,6 +1528,15 @@ Fig99mapinset <- read_excel(
   slice_head(n =8)%>%
   mutate(across(2:5, as.numeric)) %>%
   select(1:5)
+
+test(Fig99mapinset,
+         `OVERALL types`,
+         COLS = 2:5,
+         NUM = F,
+         GRP = F,
+         CHRT = "donut",
+         LAB = "Protection level",
+         SAVE = "Fig99mapinset")
 
 
 NBA_plot(Fig99mapinset,

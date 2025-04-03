@@ -25,7 +25,8 @@ library("cowplot")
 #####################################################################################
 ### functions
 
-test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GRP = TRUE, SAVE){
+test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GRP = TRUE, SAVE = NULL){
+
 
   cols <- c("#6e9fd4",
             "#6e9fd4",
@@ -43,9 +44,9 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
             "#f97835",
             "#fff02a",
             "#eeeea3",
+            "#b1d798",
             "brown",
             "grey" ,
-            "#b1d798",
             "#DB7D15",
             "#B36611",
             "#808080",
@@ -68,9 +69,9 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
               "Endangered",
               "Vulnerable",
               "Near Threatened",
+              "Least Concern",
               "Data Deficient",
               "Rare",
-              "Least Concern",
               "Cropland",
               "Plantation",
               "Built up",
@@ -83,55 +84,113 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
 
       ## Prepare the data frame by arranging and setting colors
       dat <- DF %>%
-        pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-        group_by(FILL) %>%
-        summarise(COUNT = sum(COUNT, na.rm = T))  %>%
-        mutate(FILL = factor(FILL, levels = breaks))%>%
+        tidyr::pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+        dplyr::group_by(FILL) %>%
+        dplyr::summarise(COUNT = sum(COUNT, na.rm = T), .by = FILL)  %>%
+        dplyr::mutate(FILL = factor(FILL, levels = breaks))%>%
         dplyr::mutate(ymax = cumsum(COUNT)) %>%
         dplyr::mutate(ymin = ymax -COUNT) %>%
-        ungroup()
+        dplyr::ungroup()
 
 
-      plot <- ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
-        ggplot2::geom_rect() +
-        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
-        ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-        ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = LAB) +
-        ggplot2::theme_void() + ## removes the lines around chart and grey background
-        ggplot2::theme(
-          panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-          plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-        )
+      if(NUM == FALSE){
 
+
+        plot <- ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+          ggplot2::geom_rect() +
+          #ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
+          ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+          ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          #ggplot2::ggtitle(LAB)+
+          ggplot2::labs(fill = "", title = LAB) + #this is the legend label
+          ggplot2::theme_void() + ## removes the lines around chart and grey background
+          ggplot2::theme(
+            panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+            plot.background = element_rect(fill = "white", color = NA),
+            title = element_text(size = 10),
+            strip.text = element_blank()## set plot background to white
+          )
+
+      }
+
+      #if NUm is true
+      else{
+
+        plot <- ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+          ggplot2::geom_rect() +
+          ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
+          ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+          ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          ggplot2::labs(fill = "", title = LAB)+
+          #ggplot2::xlab(LAB)+
+          ggplot2::theme_void() + ## removes the lines around chart and grey background
+          ggplot2::theme(
+            panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+            plot.background = element_rect(fill = "white", color = NA),
+            title = element_text(size = 10),
+            strip.text = element_blank()  ## set plot background to white
+          )
+
+      }
     }
 
+    #if grp is true
     else {
-
 
       ## Prepare the data frame by arranging and setting colors
       dat <- DF %>%
-        pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-        mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
-        mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-        mutate(FILL = factor(FILL, levels = breaks))%>%
+        tidyr::pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+        dplyr::mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
+        dplyr::mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+        dplyr::mutate(FILL = factor(FILL, levels = breaks))%>%
         dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{GROUPS}}) %>%
         dplyr::mutate(ymin = ymax -PERCENTAGE)
 
-      plot <-ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
-        ggplot2::geom_rect() +
-        facet_wrap(vars({{GROUPS}}))+
-        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
-        ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-        ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = LAB) +
-        ggplot2::theme_void() + ## removes the lines around chart and grey background
-        ggplot2::theme(
-          panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-          plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-        )
+      if(NUM == FALSE){
+
+
+        plot <-ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+          ggplot2::geom_rect() +
+          ggplot2::facet_wrap(vars({{GROUPS}}))+
+          #ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
+          ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+          ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          ggplot2::labs(fill = "", title = LAB)+
+          #ggplot2::xlab(LAB)+
+          ggplot2::theme_void() + ## removes the lines around chart and grey background
+          ggplot2::theme(
+            panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+            plot.background = element_rect(fill = "white", color = NA),
+            title = element_text(size = 10),
+            strip.text = element_blank()  ## set plot background to white
+          )
+      }
+
+      #if Num is true
+      else{
+
+        plot <-ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+          ggplot2::geom_rect() +
+          ggplot2::facet_wrap(vars({{GROUPS}}))+
+          ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
+          ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+          ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          ggplot2::labs(fill = "", title = LAB)+
+          #ggplot2::xlab(LAB)+
+          ggplot2::theme_void() + ## removes the lines around chart and grey background
+          ggplot2::theme(
+            panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+            plot.background = element_rect(fill = "white", color = NA),
+            title = element_text(size = 10),
+            strip.text = element_blank()  ## set plot background to white
+          )
+
+      }
+
     }
   }
 
@@ -143,11 +202,11 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
       dplyr::pull({{GROUPS}})
 
     dat <- DF %>%
-      pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-      mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
-      mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-      mutate(across(COUNT, ~na_if(., 0))) %>%
-      mutate(FILL = factor(FILL, levels = breaks))
+      tidyr::pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
+      dplyr::mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
+      dplyr::mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
+      dplyr::mutate(dplyr::across(COUNT, ~na_if(., 0))) %>%
+      dplyr::mutate(FILL = factor(FILL, levels = breaks))
 
     if(NUM == TRUE){
 
@@ -208,46 +267,170 @@ test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GR
 
 }
 
+Fig99mapinset <- read_excel(
+  dir("data",
+      "Fig99mapinset_graph.xlsx",
+      full.names = T,
+      recursive = T))%>%
+  slice_head(n =8)%>%
+  mutate(across(2:5, as.numeric)) %>%
+  select(1:5)
+
+test(Fig99mapinset,
+     `OVERALL types`,
+     COLS = 2:5,
+     NUM = F,
+     GRP = F,
+     CHRT = "donut",
+     LAB = "Protection level",
+     SAVE = "Fig99mapinset")
+
+#############################################################################
+##try with marine
+
+mem <- sf::read_sf(list.files
+                   (path="data",
+                     pattern="Marine_Ecosystem_Map_2023_final_benthic_benthopelagic_only.gpkg",
+                     recursive = T,
+                     full.names = T)[1])
+
+pro_thr <- readxl::read_xlsx(list.files
+                    (path="data",
+                      pattern="Marine_Ecosystem_Map_2023_MarineDescriptiveFields_LinkTable_forKerry_Avril_KS.xlsx",
+                      recursive = T,
+                      full.names = T)[1])
+
+eez <- sf::read_sf(list.files(path="data",
+                     pattern="^eez_mainlandRSA_buffered_1km_allEEZversions.gpkg$",
+                     recursive = T,
+                     full.names = T)[1]) # pattern="^eez_MEM2018.gpkg$",
+
+mem <- mem %>%
+  left_join(select(pro_thr, EcosystemType, `2023_threat_status`),
+            by = c("B_EcosysType" = "EcosystemType")) %>%
+  slice_tail(n = 1000)
 
 
-test.2 <- function(DF,YEAR, RLI, min, max, GRP = FALSE){
-
-  if(GRP == TRUE){
-
-    ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}}, group = {{GROUP}}, color = {{GROUP}})) +
-      ggplot2::geom_line(linetype="dashed") +
-      ggplot2::geom_ribbon(aes(ymin = {{min}}, ymax = {{max}}), fill = "grey", alpha = .2, colour = NA)+
-      ggplot2::theme_classic()+
-      ggplot2::ylim(0.7,1)
-
-  }
-  else {
-
-    ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}})) +
-      ggplot2::geom_line(aes(y = {{RLI}})) +
-      ggplot2::geom_ribbon(aes(ymin = {{min}}, ymax = {{max}}),alpha = .3, colour = NA)+
-      ggplot2::theme_classic()+
-      ggplot2::ylim(0.7,1)
 
 
-  }
+library(tmap)
 
-  ggsave(paste0("outputs/", "IRL", ".png", height = 10, width = 16, units = 'cm'))
-}
+names(mem)[names(mem) == "2023_threat_status"] = "Red List of Ecosystems Category"
 
-test.3 <- function(DF){
 
-  table <- kableExtra::kable(DF, "html", escape = FALSE) %>%
-    kableExtra::kable_styling(
-      bootstrap_options = c("striped", "hover"),
-      full_width = FALSE,
-      position = "center",
-      font_size = 1) %>%
-    kableExtra::row_spec(0, background = "#899be1", color = "black", bold = TRUE, extra_css = "border: 1px solid black") %>% # purple header with black text and black borders
-    kableExtra::column_spec(1:ncol(DF), border_left = TRUE, border_right = TRUE, background = "white") %>% # black border around columns
-    kableExtra::add_header_above(c(" " = ncol(DF)), line = TRUE, line_sep = 3, color = "black") # black border around header
-  table
-}
+
+a <- tm_shape(mem) +
+  tm_fill("Red List of Ecosystems Category",
+          fill.scale = tm_scale(values= c("red","orange","yellow","#B4D79E")),
+          fill.legend = tm_legend_hide())+
+  # tm_shape(eez) +
+  # tm_fill("white")+
+  tm_shape(mem) +
+  tm_borders(col='black',
+             lwd = 0.7) +
+  tm_title(
+    "Figure 1a: Map showing the distribution of threatened ecosystem types in their historical extent",
+    position = c("left", "top"),
+    size = 0.9
+  ) +
+  tm_layout(
+    frame = TRUE
+  )+
+  tm_grid(lwd = 0.05,
+          alpha = 0.2,
+          labels.show = FALSE) +
+  tm_compass(type="arrow",
+             position = c("right", "bottom"),
+             size = 0.7) +
+  tm_layout(frame = FALSE)
+
+a
+
+
+b <- tm_shape(mem) +
+  tm_fill("Red List of Ecosystems Category",
+          fill.scale = tm_scale(values= c("red","orange","yellow","#B4D79E"),
+                                labels = c("Critically Endangered", "Endangered", "Vulnerable", "Least Concern", "Not nutaral")),
+          fill.legend = tm_add_legend(),
+          legend.show = TRUE)+
+
+  # tm_shape(mem) +
+  # tm_raster(style = "cont",
+  #           palette = "gray97",
+  #           labels = "Not Natural",
+  #           title = "",
+  #           colorNA = NULL) +
+  #
+  # tm_shape(Excl_SA) +
+  # tm_fill("white") +
+
+  tm_shape(mem) +
+  tm_borders(col='black',
+             lwd = 0.75) +
+  tm_title(
+    "Figure 1a: Map showing the distribution of threatened ecosystem types in their historical extent",
+    position = c("left", "top"),
+    size = 0.9
+  ) +
+  tm_legend(text.size = 0.7,
+            title.size = 0.9)+
+  tm_layout(
+    frame = TRUE
+  )+
+
+  tm_grid(lwd = 0.05,
+          alpha = 0.2,
+          labels.show = FALSE) +
+  tm_scalebar(position = c("right", "bottom"),
+               width = 5,
+              text.size = 5) +
+
+  tm_layout(frame = FALSE)
+
+b
+
+tmap_arrange(a, b)
+
+
+
+dat <- Fig99mapinset %>%
+  tidyr::pivot_longer(2:5, names_to = "FILL", values_to = "COUNT")%>%
+  dplyr::group_by(FILL) %>%
+  dplyr::summarise(COUNT = sum(COUNT, na.rm = T))%>%
+  dplyr::mutate(FILL = factor(FILL, levels = breaks))%>%
+  dplyr::mutate(ymax = cumsum(COUNT)) %>%
+  dplyr::mutate(ymin = ymax -COUNT) %>%
+  dplyr::ungroup()
+
+
+dat <- Fig99mapinset %>%
+  tidyr::pivot_longer(2:5, names_to = "FILL", values_to = "COUNT") %>%
+  dplyr::summarise(COUNT = sum(COUNT, na.rm = TRUE), .by = FILL) %>%
+  # Ensure FILL is a factor with levels in the desired order, using `breaks`
+  dplyr::mutate(FILL = factor(FILL, levels = breaks)) %>%
+  dplyr::mutate(ymax = cumsum(COUNT)) %>%
+  dplyr::mutate(ymin = ymax - COUNT) %>%
+  dplyr::ungroup()
+
+# Check the levels of FILL in dat to confirm the correct order
+dat$FILL
+
+ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
+  ggplot2::geom_rect()+
+ ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
+ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
+ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
+  ggplot2::scale_fill_manual(values = values)+
+  ggplot2::labs(fill = "", title = "Protection level")+
+  #ggplot2::xlab(LAB)+
+  ggplot2::theme_void() + ## removes the lines around chart and grey background
+  ggplot2::theme(
+    panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
+    plot.background = element_rect(fill = "white", color = NA),
+    title = element_text(size = 10),
+    strip.text = element_blank()  ## set plot background to white
+  )
+
 
 
 #####################################################################################
