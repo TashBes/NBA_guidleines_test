@@ -2,7 +2,7 @@
 ##
 ## Script name: Andrew graphs
 ##
-## Purpose of script:make functions to create the graphs for andrews data he sent us.
+## Purpose of script:make functions to create the graphs for Andrews data he sent us.
 ##
 ## Author: Natasha Besseling
 ##
@@ -20,211 +20,7 @@ library(readxl)
 library(NBA.package)
 library("cowplot")
 
-# source("functions/packages.R")       # loads up all the packages we need
 #devtools::install_github("TashBes/NBA.package")
-#####################################################################################
-### functions
-
-test <-function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, GRP = TRUE){
-
-  cols <- c("#6e9fd4",
-            "#6e9fd4",
-            "#a5c5c7",
-            "#81aba7",
-            "#88814e",
-            "#88812e",
-            "#466a31",
-            "#80a952",
-            "#d5dec3",
-            "#a4a3a3",
-            "#a4a3a3",
-            "black",
-            "#e9302c",
-            "#f97835",
-            "#fff02a",
-            "#eeeea3",
-            "brown",
-            "grey" ,
-            "#b1d798",
-            "#DB7D15",
-            "#B36611",
-            "#808080",
-            "#F5C592",
-            "#0071C0")
-
-  breaks <- c("Natural",
-              "Natural/near-natural",
-              "Near-natural",
-              "Moderately modified",
-              "Heavily modified",
-              "Severely/critically modified",
-              "Well Protected",
-              "Moderately Protected",
-              "Poorly Protected",
-              "No Protection",
-              "Not Protected",
-              "Extinct",
-              "Critically Endangered",
-              "Endangered",
-              "Vulnerable",
-              "Near Threatened",
-              "Data Deficient",
-              "Rare",
-              "Least Concern",
-              "Cropland",
-              "Plantation",
-              "Built up",
-              "Mine",
-              "Artificial waterbody")
-
-  if(CHRT == "donut"){
-
-    if(GRP == FALSE) {
-
-      ## Prepare the data frame by arranging and setting colors
-      dat <- DF %>%
-        pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-        group_by(FILL) %>%
-        summarise(COUNT = sum(COUNT, na.rm = T))  %>%
-        mutate(FILL = factor(FILL, levels = breaks))%>%
-        dplyr::mutate(ymax = cumsum(COUNT)) %>%
-        dplyr::mutate(ymin = ymax -COUNT) %>%
-        ungroup()
-
-
-      ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
-        ggplot2::geom_rect() +
-        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
-        ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-        ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = LAB) +
-        ggplot2::theme_void() + ## removes the lines around chart and grey background
-        ggplot2::theme(
-          panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-          plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-        )
-
-    }
-
-    else {
-
-
-      ## Prepare the data frame by arranging and setting colors
-      dat <- DF %>%
-        pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-        mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
-        mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-        mutate(FILL = factor(FILL, levels = breaks))%>%
-        dplyr::mutate(ymax = cumsum(PERCENTAGE), .by = {{GROUPS}}) %>%
-        dplyr::mutate(ymin = ymax -PERCENTAGE)
-
-      ggplot2::ggplot(dat, aes(ymax = ymax, ymin = ymin,xmax = 4, xmin = 3,  fill = FILL)) +
-        ggplot2::geom_rect() +
-        facet_wrap(vars({{GROUPS}}))+
-        ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
-        ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
-        ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
-        ggplot2::labs(fill = LAB) +
-        ggplot2::theme_void() + ## removes the lines around chart and grey background
-        ggplot2::theme(
-          panel.background = element_rect(fill = "white", color = NA),  ## set panel background to white
-          plot.background = element_rect(fill = "white", color = NA)  ## set plot background to white
-        )
-    }
-  }
-
-
-## if chart is bar:
-else {
-
-  ord <-   DF %>%
-    dplyr::pull({{GROUPS}})
-
-  dat <- DF %>%
-    pivot_longer({{COLS}}, names_to = "FILL", values_to = "COUNT")%>%
-    mutate(TOT = sum(COUNT, na.rm = T), .by = {{GROUPS}} )%>%
-    mutate(PERCENTAGE = (COUNT/TOT)*100)%>%
-    mutate(across(COUNT, ~na_if(., 0))) %>%
-    mutate(FILL = factor(FILL, levels = breaks))
-
-  if(NUM == TRUE){
-
-
-
-  ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{GROUPS}}, level = ord), fill = FILL)) +
-    ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-    ggplot2::geom_text(aes(label = COUNT),
-                       position = position_stack(vjust = 0.5, reverse = TRUE), # add count labels to the bars and adjust "vjust" value to place text at the beginning, centre or end of bars
-                       size = 3,
-                       color = "black",
-                       show.legend = FALSE) + # adjust size of labels with no legend being shown
-    ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
-    ggplot2::ylab({{LAB}}) +
-    ggplot2::xlab("") + ## remove the heading for the y-axis
-    ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-    ggplot2::labs(fill = "") + ## change the legend title here
-    ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-    ggplot2::theme_minimal() +
-    ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                   panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                   axis.line = element_blank(), # remove all x-axis grid lines
-                   panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                   legend.text = element_text(size = 8), # change legend text size
-                   plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                   plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-    ggplot2::coord_flip()  # flip the orientation of the chart
-  }
-
-  ## if NUM == FALSE
-  else {
-
-      ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{GROUPS}}, level = ord), fill = FILL)) +
-        ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
-        ggplot2::ylab({{LAB}}) +
-        ggplot2::xlab("") + ## remove the heading for the y-axis
-        ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
-        ggplot2::labs(fill = "") + ## change the legend title here
-        ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"), breaks = c(0, 50, 100)) + # set the y-axis to show 0%, 50%, and 100%
-        ggplot2::theme_minimal() +
-        ggplot2::theme(legend.position = "bottom", # position legend to the bottom
-                       panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
-                       axis.line = element_blank(), # remove all x-axis grid lines
-                       panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
-                       legend.text = element_text(size = 8), # change legend text size
-                       plot.background = element_rect(color = "black", fill = NA),  # add border around the entire plot include legend
-                       plot.margin = margin(10, 10, 10, 10)) +   # extend plot margins to accommodate the border)
-        ggplot2::coord_flip()  # flip the orientation of the chart
-  }
-}
-}
-
-
-
-test.2 <- function(DF,YEAR, RLI, min, max){
-  ggplot2::ggplot(DF, aes(x = {{YEAR}}, y = {{RLI}})) +
-    ggplot2::geom_line(aes(y = {{RLI}})) +
-    ggplot2::geom_ribbon(aes(ymin = {{min}}, ymax = {{max}}),alpha = .3, colour = NA)+
-    ggplot2::theme_classic()+
-    ggplot2::ylim(0.7,1)
-
-}
-
-test.3 <- function(DF){
-
-  table <- kableExtra::kable(DF, "html", escape = FALSE) %>%
-    kableExtra::kable_styling(
-      bootstrap_options = c("striped", "hover"),
-      full_width = FALSE,
-      position = "center",
-      font_size = 1) %>%
-    kableExtra::row_spec(0, background = "#899be1", color = "black", bold = TRUE, extra_css = "border: 1px solid black") %>% # purple header with black text and black borders
-    kableExtra::column_spec(1:ncol(DF), border_left = TRUE, border_right = TRUE, background = "white") %>% # black border around columns
-    kableExtra::add_header_above(c(" " = ncol(DF)), line = TRUE, line_sep = 3, color = "black") # black border around header
-  table
-}
 
 
 #####################################################################################
@@ -239,12 +35,13 @@ Fig1a <- read_excel(
   slice_head(n =8) %>%
   mutate(across(2:6, as.numeric))
 
-test(Fig1a,
+NBA_plot(Fig1a,
      `OVERALL types`,
      2:5,
      CHRT = "bar",
      NUM = TRUE,
-     LAB = "Percentage of ecosystem types")
+     LAB = "Percentage of ecosystem types",
+     SAVE = "Fig1a")
 
 
 ###
@@ -260,11 +57,12 @@ Fig1b <- read_excel(
   pivot_wider(names_from = `Red List Category`)
 
 
-test(Fig1b,
+NBA_plot(Fig1b,
      OVERALL_types,
      2:5,
      CHRT = "bar",
-     LAB = "Percentage of taxon types")
+     LAB = "Percentage of taxon types",
+     SAVE = "Fig1b")
 
 ###
 ### fig 1.c
@@ -278,12 +76,13 @@ Fig1c <- read_excel(
   mutate(across(2:5, as.numeric))
 
 
-test(Fig1c,
+NBA_plot(Fig1c,
      `OVERALL types`,
      2:5,
      CHRT = "bar",
      NUM = T,
-     LAB = "Percentage of ecosystem types")
+     LAB = "Percentage of ecosystem types",
+     SAVE = "Fig1c")
 
 
 ###
@@ -299,11 +98,12 @@ Fig1d <- read_excel(
 
 
 
-test(Fig1d,
+NBA_plot(Fig1d,
      OVERALL_types,
      2:5,
      CHRT = "bar",
-     LAB = "Percentage of taxon types")
+     LAB = "Percentage of taxon types",
+     SAVE = "Fig1d")
 
 
 ###
@@ -319,12 +119,13 @@ Fig4a <- read_excel(
 
 
 
-p <- test(Fig4a,
+p <- NBA_plot(Fig4a,
           `OVERALL types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig4a")
 
 #add_rec <- function(GRAPH, CAT1, ..., X%)
 
@@ -345,12 +146,13 @@ Fig4b <- read_excel(
   mutate(across(2:6, as.numeric))
 
 
-p <- test(Fig4b,
+p <- NBA_plot(Fig4b,
           `OVERALL types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig4b")
 
 p +
   annotate("rect", xmin =2.5, xmax = 3.5, ymin = -1, ymax = 18.5,alpha = 0, color= "black",linewidth = 1.5)+
@@ -367,7 +169,7 @@ Fig6 <- read_excel(
       recursive = T))%>%
   select(-c(5:6))
 
-test.2(Fig6, Years, RLI, min, max)
+RLI_plot(Fig6, Years, RLI, min, max)
 
 
 ###
@@ -383,9 +185,6 @@ Fig23abc <- read_excel(
       "Fig23abc_graph.xlsx",
       full.names = T,
       recursive = T))
-
-
-#test.3 <- function(DF, ROWS, YR_COLS, NM_COL,  )
 
 
 a <- Fig23abc %>%
@@ -441,7 +240,7 @@ b <- Fig23abc %>%
              linetype="dashed",
              color = "lightblue",
              linewidth = 1.5)+
-  annotate("text", x=2005, y=12, label="Aichi 17% target")+
+  annotate("text", x=2005, y=19, label="Aichi 17% target")+
   ggplot2::scale_y_continuous(labels = function(x) paste0(x, "%"),
                               limits = c(0,40),
                               expand = c(0, 0))+
@@ -503,10 +302,12 @@ Fig27 <- read_excel(
   mutate(across(2:5, as.numeric))
 
 
-test(Fig27,`...1`,
+NBA_plot(Fig27,
+         `...1`,
      2:4,
+     CHRT = "bar",
      LAB = "Percentage of ecosystem extent",
-     CHRT = "bar")
+     SAVE = "Fig27")
 
 
 ###
@@ -518,6 +319,7 @@ Fig28ab <- read_excel(
       full.names = T,
       recursive = T))
 
+
 FG <- Fig28ab%>%
   slice_head(n =8)%>%
   mutate(across(2:6, as.numeric))
@@ -526,17 +328,19 @@ EXT <- Fig28ab%>%
   slice(11:18)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,
+a <- NBA_plot(FG,
           `OVERALL types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
-b <- test(EXT,
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig27a")
+b <- NBA_plot(EXT,
           `OVERALL types`,
           2:5,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem extent")
+          LAB = "Percentage of ecosystem extent",
+          SAVE = "Fig27b")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -565,10 +369,12 @@ Fig30 <- read_excel(
          `Least Concern` = `Least Concern...9`) %>%
   select(1:10)
 
-test(Fig30,Realm,
+NBA_plot(Fig30,
+         Realm,
      2:9,
      CHRT = "bar",
-     LAB = "Percentage of taxon types")
+     LAB = "Percentage of taxon types",
+     SAVE = "Fig27b")
 
 
 ###
@@ -580,7 +386,7 @@ Fig33a <- read_excel(
       full.names = T,
       recursive = T))
 
-test.2(Fig33a,Years, RLI, min, max)
+RLI_plot(Fig33a,Years, RLI, min, max)
 
 ###
 ### Fig33b
@@ -591,7 +397,7 @@ Fig33b <- read_excel(
       full.names = T,
       recursive = T))
 
-test.2(Fig33b,Years, RLI, min, max)
+RLI_plot(Fig33b,Years, RLI, min, max)
 
 ###
 ### Fig34ab
@@ -610,17 +416,19 @@ EXT <- Fig34ab%>%
   slice(11:18)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,
+a <- NBA_plot(FG,
           `OVERALL types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
-b <- test(EXT,
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig34a")
+b <- NBA_plot(EXT,
           `OVERALL types`,
           2:5,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem extent")
+          LAB = "Percentage of ecosystem extent",
+          SAVE = "Fig34b")
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
           label_size = 8,
@@ -650,17 +458,19 @@ EXT <- Fig40ab%>%
   slice(14:24)%>%
   mutate(across(2:6, as.numeric))
 
-a <- test(FG,
+a <- NBA_plot(FG,
           `TERR types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
-b <- test(EXT,
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig40a")
+b <- NBA_plot(EXT,
           `TERR types`,
           2:5,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem extent")
+          LAB = "Percentage of ecosystem extent",
+          SAVE = "Fig40b")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -679,12 +489,13 @@ Fig42 <- read_excel(
       recursive = T))%>%
   slice_head(n =11)
 
-test(Fig42,
+NBA_plot(Fig42,
      `TERR types`,
      2:5,
      NUM = T,
      CHRT = "bar",
-     LAB = "Percentage of ecosystem types")
+     LAB = "Percentage of ecosystem types",
+     SAVE = "Fig40b")
 
 
 
@@ -696,7 +507,7 @@ test(Fig42,
 ###
 ### Fig48ab
 
-
+## not sure...
 
 Fig48ab <- read_excel(
   dir("data",
@@ -707,12 +518,13 @@ Fig48ab <- read_excel(
   slice_head(n =11)
 
 
-# test(Fig48ab,
+# NBA_plot(Fig48ab,
 #      `TERR types`,
 #      2:5,
 #      NUM = T,
 #      CHRT = "bar",
-#      LAB = "Percentage of ecosystem types")
+#      LAB = "Percentage of ecosystem types",
+#      SAVE = "Fig48ab")
 
 
 ###
@@ -730,11 +542,12 @@ Fig51 <- read_excel(
   pivot_wider(names_from = `River Condition % length`)
 
 
-test(Fig51,
+NBA_plot(Fig51,
      OVERALL_types,
      2:4,
      CHRT = "bar",
-     LAB = "Percentage of ecosystem extent")
+     LAB = "Percentage of ecosystem extent",
+           SAVE = "Fig51")
 
 ###
 ### Fig52
@@ -752,11 +565,12 @@ Fig52 <- read_excel(
   mutate(across(2:4, as.numeric))
 
 
-test(Fig52,
+NBA_plot(Fig52,
      OVERALL_types,
      2:4,
      CHRT = "bar",
-     LAB = "Percentage of ecosystem extent")
+     LAB = "Percentage of ecosystem extent",
+     SAVE = "Fig52")
 
 
 ###
@@ -775,16 +589,14 @@ Fig53 <- read_excel(
   select(1:5)
 
 
-test(Fig53,
+NBA_plot(Fig53,
      `OVERALL types`,
      2:5,
      NUM = TRUE,
      LAB = "Threat status",
      GRP = F,
-     CHRT = "donut")
-
-
-
+     CHRT = "donut",
+     SAVE = "Fig53")
 
 
 ###
@@ -808,17 +620,19 @@ EXT <- Fig54ab%>%
   mutate(across(2:6, as.numeric))
 
 
-a <- test(FG,
+a <- NBA_plot(FG,
           `RIVER types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
-b <- test(EXT,
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig54a")
+b <- NBA_plot(EXT,
           `RIVER types`,
           2:5,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem extent")
+          LAB = "Percentage of ecosystem extent",
+          SAVE = "Fig54b")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -842,7 +656,14 @@ Fig55mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig55mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut", LAB = "Threat status")
+NBA_plot(Fig55mapinset,
+         `OVERALL types`,
+         COLS = 2:5,
+         NUM = T,
+         GRP = T,
+         CHRT = "donut",
+         LAB = "Threat status",
+         SAVE = "Fig55mapinset")
 
 
 
@@ -865,17 +686,19 @@ EXT <- Fig56%>%
   mutate(across(2:6, as.numeric))
 
 
-a <- test(FG,
+a <- NBA_plot(FG,
           `WETLAND types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
-b <- test(EXT,
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig56")
+b <- NBA_plot(EXT,
           `WETLAND types`,
           2:5,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem extent")
+          LAB = "Percentage of ecosystem extent",
+          SAVE = "Fig56")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -899,13 +722,14 @@ Fig58mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig58mapinset,
+NBA_plot(Fig58mapinset,
      `OVERALL types`,
      COLS = 2:5,
      NUM = T,
      GRP = T,
      CHRT = "donut",
-     LAB = "Protection level")
+     LAB = "Protection level",
+     SAVE = "Fig58mapinset")
 
 
 ###
@@ -927,17 +751,19 @@ EXT <- Fig59ab%>%
   mutate(across(2:5, as.numeric))
 
 
-a <- test(FG,
+a <- NBA_plot(FG,
           `RIVER types`,
           2:5,
           NUM = T,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem types")
-b <- test(EXT,
+          LAB = "Percentage of ecosystem types",
+          SAVE = "Fig59a")
+b <- NBA_plot(EXT,
           `RIVER types`,
           2:5,
           CHRT = "bar",
-          LAB = "Percentage of ecosystem extent")
+          LAB = "Percentage of ecosystem extent",
+          SAVE = "Fig59b")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -961,13 +787,20 @@ Fig61mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig61mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut", LAB = "Protection level")
+NBA_plot(Fig61mapinset,
+         `OVERALL types`,
+         COLS = 2:5,
+         NUM = T,
+         GRP = T,
+         CHRT = "donut",
+         LAB = "Protection level",
+         SAVE = "Fig61mapinset")
 
 
 ###
 ### Fig64ab
 
-Fig64ab <- read_excel(
+Fig64ab<- read_excel(
   dir("data",
       "Fig64ab_graph.xlsx",
       full.names = T,
@@ -988,8 +821,20 @@ END <- Fig64ab%>%
   pivot_longer(2:8, names_to = "OVERALL_types")%>%
   pivot_wider(names_from = `All species`)
 
-a <- test(TAXA,OVERALL_types, 2:9, TYP = "TAXA", CHRT = "bar")
-b <- test(END,OVERALL_types, 2:9, TYP = "END", CHRT = "bar")
+a <- NBA_plot(TAXA,
+              OVERALL_types,
+              2:9,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of taxa",
+              SAVE = "Fig59a")
+b <- NBA_plot(END,
+              OVERALL_types,
+              2:9,
+              CHRT = "bar",
+              LAB = "Percentage of endemic taxa",
+              SAVE = "Fig59b")
+
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1017,8 +862,19 @@ END <- Fig67ab%>%
   slice(9:13)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test(TAXA,all, 2:5, TYP = "TAXA", CHRT = "bar")
-b <- test(END,all, 2:5, TYP = "END", CHRT = "bar")
+a <- NBA_plot(TAXA,
+              all,
+              2:5,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of taxa",
+              SAVE = "Fig67a")
+b <- NBA_plot(END,
+              all,
+              2:5,
+              CHRT = "bar",
+              LAB = "Percentage of endemic taxa",
+              SAVE = "Fig67b")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1042,22 +898,34 @@ Fig69ab <- read_excel(
   janitor::row_to_names(row_number = 1)
 
 
-FG <- Fig69ab%>%
-  slice_head(n =5)%>%
-  mutate(across(2:6, as.numeric))
-
-EXT <- Fig69ab%>%
-  slice(7:11)%>%
-  mutate(across(2:6, as.numeric))
-
-a <- test(FG, `Biogeographical region`, 2:6, NUM = T, CHRT = "bar")
-b <- test(EXT, `Biogeographical region`, 2:6, TYP = "EXT", CHRT = "bar")
-
-plot_grid(a,b,
-          labels = c("(a)", "(b)"),
-          label_size = 8,
-          label_fontface = "plain",
-          ncol = 2)
+# FG <- Fig69ab%>%
+#   slice_head(n =5)%>%
+#   mutate(across(2:6, as.numeric))
+#
+# EXT <- Fig69ab%>%
+#   slice(7:11)%>%
+#   mutate(across(2:6, as.numeric))
+#
+#
+# a <- NBA_plot(TAXA,
+#               `Biogeographical region`,
+#               2:6,
+#               NUM = T,
+#               CHRT = "bar",
+#               LAB = "Percentage of ecosystem types",
+#               SAVE = "Fig69a")
+# b <- NBA_plot(END,
+#               `Biogeographical region`,
+#               2:6,
+#               CHRT = "bar",
+#               LAB = "Percentage of ecosystem extent",
+#               SAVE = "Fig69b")
+#
+# plot_grid(a,b,
+#           labels = c("(a)", "(b)"),
+#           label_size = 8,
+#           label_fontface = "plain",
+#           ncol = 2)
 
 
 
@@ -1081,8 +949,20 @@ EXT <- Fig71ab%>%
   slice(7:11)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test(FG, `Biogeographical region`, 2:5, NUM = T, CHRT = "bar")
-b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT", CHRT = "bar")
+a <- NBA_plot(FG,
+              `Biogeographical region`,
+              2:5,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem types",
+              SAVE = "Fig71a")
+b <- NBA_plot(EXT,
+              `Biogeographical region`,
+              2:5,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem extent",
+              SAVE = "Fig71b")
+
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1110,8 +990,20 @@ EXT <- Fig73ab%>%
   slice(8:12)%>%
   mutate(across(2:5, as.numeric))
 
-a <- test(FG, `Biogeographical region`, 2:5, NUM = T, CHRT = "bar")
-b <- test(EXT, `Biogeographical region`, 2:5, TYP = "EXT", CHRT = "bar")
+a <- NBA_plot(FG,
+              `Biogeographical region`,
+              2:5,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem types",
+              SAVE = "Fig73a")
+b <- NBA_plot(EXT,
+              `Biogeographical region`,
+              2:5,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem extent",
+              SAVE = "Fig73b")
+
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1134,7 +1026,13 @@ Fig74 <- read_excel(
   mutate(across(2:8, as.numeric))
 
 
-test(Fig74, OVERALL_types, 2:8, NUM = T, CHRT = "bar")
+NBA_plot(Fig74,
+         OVERALL_types,
+         2:8,
+         NUM = T,
+         CHRT = "bar",
+         LAB = "Percentage of ecosystem types",
+         SAVE = "Fig73b")
 
 
 ###
@@ -1147,7 +1045,13 @@ Fig84 <- read_excel(
       recursive = T))
 
 
-test(Fig84, `2019 MPAs`, 2:5, NUM = T, CHRT = "bar")
+NBA_plot(Fig84,
+         `2019 MPAs`,
+         2:5,
+         NUM = T,
+         CHRT = "bar",
+         LAB = "Percentage of ecosystem types",
+         SAVE = "Fig73b")
 
 
 
@@ -1167,7 +1071,12 @@ Fig90 <- read_excel(
   mutate(across(2:7, as.numeric))
 
 
-test(Fig90, OVERALL_types, COLS = 2:7, TYP = "EXT", CHRT = "bar" )
+NBA_plot(Fig90,
+         OVERALL_types,
+         COLS = 2:7,
+         CHRT = "bar",
+         LAB = "Percentage of ecosystem land use",
+         SAVE = "Fig90")
 
 
 ###
@@ -1188,8 +1097,18 @@ EXT <- Fig91ab%>%
   slice(4:7)%>%
   mutate(across(2:4, as.numeric))
 
-a <- test(FG, `...1`, 2:4, TYP = "EXT", CHRT = "bar")
-b <- test(EXT, `...1`, 2:4, TYP = "EXT", CHRT = "bar")
+a <- NBA_plot(FG,
+              `...1`,
+              num =T,
+              2:4,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem types",
+              SAVE = "Fig91a")
+b <- NBA_plot(EXT, `...1`,
+              2:4,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem extent",
+              SAVE = "Fig91b")
 
 plot_grid(a,b,
           labels = c("(a)", "(b)"),
@@ -1238,13 +1157,35 @@ EXT2 <- Fig92abcd%>%
          Vulnerable = `VU...22`,
          `Least Concern` = `LC...23`)
 
-a <- test(FG1, `Coast RLE types...1`, 2:4, NUM = T, CHRT = "bar")
+a <- NBA_plot(FG1,
+              `Coast RLE types...1`,
+              2:4,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem types",
+              SAVE = "Fig92a")
 a
-b <- test(EXT1, `Coast RLE extent`, 2:4, TYP = "EXT", CHRT = "bar")
+b <- NBA_plot(EXT1,
+              `Coast RLE extent`,
+              2:4,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem extent",
+              SAVE = "Fig92b")
 b
-c <- test(FG2, `Coast RLE types...13`, 2:4, NUM = T, CHRT = "bar")
+c <- NBA_plot(FG2,
+              `Coast RLE types...13`,
+              2:4,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem types",
+              SAVE = "Fig92c")
 c
-d <- test(EXT2, `...19`, 2:4, TYP = "EXT", CHRT = "bar")
+d <- NBA_plot(EXT2,
+              `...19`,
+              2:4,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem extent",
+              SAVE = "Fig92d")
 d
 
 plot_grid(a,b,c,d,
@@ -1296,14 +1237,37 @@ EXT2 <- Fig93abcd%>%
          `Poorly Protected` = `PP...22`,
          `No Protection` = `NP...23`)
 
-a <- test(FG1, `...1`, 2:4, NUM = T, CHRT = "bar")
+a <- NBA_plot(FG1,
+              `...1`,
+              2:4,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem types",
+              SAVE = "Fig93a")
 a
-b <- test(EXT1, `...7`, 2:4, TYP = "EXT", CHRT = "bar")
+b <- NBA_plot(EXT1,
+              `...7`,
+              2:4,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem extent",
+              SAVE = "Fig93b")
 b
-c <- test(FG2, `...13`, 2:4, NUM = T, CHRT = "bar")
+c <- NBA_plot(FG2,
+              `...13`,
+              2:4,
+              NUM = T,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem types",
+              SAVE = "Fig93c")
 c
-d <- test(EXT2, `...19`, 2:4, TYP = "EXT", CHRT = "bar")
+d <- NBA_plot(EXT2,
+              `...19`,
+              2:4,
+              CHRT = "bar",
+              LAB = "Percentage of ecosystem extent",
+              SAVE = "Fig93d")
 d
+
 
 plot_grid(a,b,c,d,
           labels = c("(a)", "(b)", "(c)", "(d)"),
@@ -1327,7 +1291,14 @@ Fig98mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig98mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut")
+NBA_plot(Fig98mapinset,
+         `OVERALL types`,
+         COLS = 2:5,
+         NUM = T,
+         GRP = T,
+         CHRT = "donut",
+         LAB = "Threat status",
+         SAVE = "Fig98mapinset")
 
 
 
@@ -1346,7 +1317,14 @@ Fig99mapinset <- read_excel(
   select(1:5)
 
 
-test(Fig99mapinset, `OVERALL types`, COLS = 2:5, NUM = T, GRP = T, CHRT = "donut")
+NBA_plot(Fig99mapinset,
+         `OVERALL types`,
+         COLS = 2:5,
+         NUM = T,
+         GRP = T,
+         CHRT = "donut",
+         LAB = "Protection level",
+         SAVE = "Fig99mapinset")
 
 
 
@@ -1363,7 +1341,7 @@ Table3 <- read_excel(
   sheet = "T3 in NBA 2018 Synthesis")
 
 
-test.3(Table3)
+basic_tbl(Table3)
 
 
 
