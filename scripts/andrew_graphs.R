@@ -1570,4 +1570,4 @@ basic_tbl(Table3)
 #####################################################################################
 ### unload packages
 
-# detach("package:xxx", unload=TRUE)
+detach("package:redlistr", unload=TRUE)
