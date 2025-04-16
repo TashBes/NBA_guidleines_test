@@ -138,11 +138,11 @@ NBA_map <-function(DF, COLS, GEOM, CAP, FILL){
 
 ######################################################################################
 
-test <- NBA_map(mem_2023,
+test <- NBA_map(mem,
                 c(ecosystem_type, protection_level_30, threat_status, eco_poly_colour),
                 geometry,
-                "Figure 1. Map of rhe distribution of the ecosystems protection level",
-                protection_level_30)
+                "Figure 1. Map of the distribution of the ecosystems threat status",
+                threat_status)
 
 test
 

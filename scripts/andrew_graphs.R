@@ -227,6 +227,30 @@ test.3 <- function(DF){
 }
 
 
+NBA_theme <- function() {
+  theme(
+    # add border 1)
+    panel.border = element_rect(colour = "grey", fill = NA, linetype = 2),
+    # color background 2)
+    panel.background = element_blank(),
+    # modify grid 3)
+    panel.grid.minor = element_blank(), # remove grid lines on every second x-axis value
+    panel.grid.major.y = element_blank(), # remove the horizontal lines only on 1st , 3rd and 5 ... x-axis
+    # modify text, axis and colour
+    axis.text = element_text(colour = "black", face = "italic", family = "Times New Roman"),
+    axis.title = element_text(colour = "black", face = "bold",family = "Times New Roman"),
+    axis.ticks = element_line(colour = "black"),
+    axis.line = element_blank(), # remove all x-axis grid lines
+    # legend at the bottom 6)
+    legend.position = "bottom",
+    legend.text = element_text(size = 8), # change legend text size
+    #plot margin
+    plot.margin = margin(10, 10, 10, 10)
+  )
+}
+
+
+
 #####################################################################################
 ###
 ### fig 1.a
