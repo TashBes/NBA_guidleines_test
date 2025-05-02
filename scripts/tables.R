@@ -49,6 +49,7 @@ table_1 <- kable(bird_data, "html", escape = FALSE) %>%
   add_header_above(c(" " = ncol(bird_data)), line = TRUE, line_sep = 3, color = "black") # black border around header
 table_1
 
+NBA_colr_tbl()
 
 #### create function
 basic_tbl <- function(DF){

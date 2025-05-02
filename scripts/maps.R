@@ -374,3 +374,19 @@ ggsave("outputs/threat_status_map_benthic.png", plot= benth_threat_map,  bg = "w
 
 
 #####################################################################################
+
+
+
+
+## install if needed (do this exactly once):
+## install.packages("usethis")
+
+library(usethis)
+use_git_config(user.name = "TashBes", user.email = "N.besseling@sanbi.org.za")
+usethis::create_github_token()
+gitcreds::gitcreds_set()
+
+
+
+
+
