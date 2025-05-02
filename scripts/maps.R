@@ -386,7 +386,14 @@ use_git_config(user.name = "TashBes", user.email = "N.besseling@sanbi.org.za")
 usethis::create_github_token()
 gitcreds::gitcreds_set()
 
+library(hexSticker)
 
-
+library(ggplot2)
+p <- ggplot(aes(x = mpg, y = wt), data = mtcars) + geom_point()
+p <- p + theme_void() + theme_transparent()
+p
+outfile <- tempfile(fileext=".png")
+test <- sticker(p, package="hexSticker", filename=outfile)
+test
 
 
