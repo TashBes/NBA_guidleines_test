@@ -231,3 +231,183 @@ table_2.2
 
 
 ```
+
+```{r}
+##colour mapping
+NBA_colours <- c(
+
+  ##Threat status
+  "Critically Endangered" = rgb(216, 30, 5, maxColorValue = 255),
+  "Endangered" = rgb(252, 127, 63, maxColorValue = 255),
+  "Vulnerable" = rgb(249, 232, 20, maxColorValue = 255),
+  "Near Threatened" = rgb(204, 226, 38, maxColorValue = 255),
+  "Least Concern" = rgb(180, 215, 158, maxColorValue = 255),
+  "Data Deficient" = rgb(209, 209, 198, maxColorValue = 255),
+  "Rare" = rgb(193, 181, 165, maxColorValue = 255),
+  "Extinct" = rgb(0, 0, 0, maxColorValue = 255),
+  "Extinct in the Wild" = rgb(84, 35, 68, maxColorValue = 255),
+
+  #Protection level
+  "Not Protected" = rgb(166, 166, 166, maxColorValue = 255),
+  "Poorly Protected" = rgb(213, 222, 196, maxColorValue = 255),
+  "Moderately Protected" = rgb(132, 171, 92, maxColorValue = 255),
+  "Well Protected" = rgb(75, 110, 0, maxColorValue = 255),
+
+  #Pressures
+  "Low" = rgb(223, 220, 199, maxColorValue = 255),
+  "Medium" = rgb(175, 168, 117, maxColorValue = 255),
+  "High" = rgb(122, 116, 70, maxColorValue = 255),
+  "Very high" = rgb(88, 82, 50, maxColorValue = 255),
+
+
+  "No threats" = rgb(48, 30, 6, maxColorValue = 255),
+  "Pollution" = rgb(97, 65, 56, maxColorValue = 255),
+  "Transportation & service corridors" = rgb(99, 76, 39, maxColorValue = 255),
+  "Agriculture" = rgb(133, 76, 13, maxColorValue = 255),
+  "Agriculture and aquaculture" = rgb(133, 76, 13, maxColorValue = 255),
+  "Geological events" = rgb(153, 102, 0, maxColorValue = 255),
+  "Biological resource use" = rgb(180, 121, 42, maxColorValue = 255),
+  "Other threats" = rgb(231, 160, 54, maxColorValue = 255),
+  "Human intrusions & disturbance" = rgb(159, 134, 9, maxColorValue = 255),
+  "Human intrusions and disturbance" = rgb(159, 134, 9, maxColorValue = 255),
+  "Climate change" = rgb(178, 149, 78, maxColorValue = 255),
+  "Climate change & severe weather" = rgb(178, 149, 78, maxColorValue = 255),
+  "Energy production & mining" = rgb(122, 116, 70, maxColorValue = 255),
+  "Energy production and mining" = rgb(122, 116, 70, maxColorValue = 255),
+  "Natural system modifications" = rgb(88, 82, 50, maxColorValue = 255),
+  "Invasive and other problematic species, genes & diseases" = rgb(61, 69, 64, maxColorValue = 255),
+  "Invasive and other problamatic species, genes and diseases" = rgb(61, 69, 64, maxColorValue = 255),
+  "Residential & commercial development" = rgb(128, 128, 128, maxColorValue = 255),
+
+
+  # Condition
+  "Natural" = rgb(110, 159, 212, maxColorValue = 255),
+  "Natural / near natural" = rgb(110, 159, 212, maxColorValue = 255),
+  "Near natural" = rgb(110, 159, 212, maxColorValue = 255),
+  "Near-natural" = rgb(110, 159, 212, maxColorValue = 255),
+  "Natural or near-natural (<50% degr.)" = rgb(110, 159, 212, maxColorValue = 255),
+  "Largely natural" = rgb(165, 197, 199, maxColorValue = 255),
+  "Moderately modified" = rgb(165, 197, 199, maxColorValue = 255),
+  "Moderately degraded (50-70% degr.)" = rgb(165, 197, 199, maxColorValue = 255),
+  "Heavily / intensively modified" = rgb(129, 171, 167, maxColorValue = 255),
+  "Permanently / irreversibly modified" = rgb(136, 129, 78, maxColorValue = 255),
+
+
+  # Responses
+  "No response" = rgb(91, 66, 114, maxColorValue = 255),
+  "Some kind of response" = rgb(100, 103, 130, maxColorValue = 255),
+  "Gazetted" = rgb(117, 164, 179, maxColorValue = 255),
+  "Signed off" = rgb(117, 164, 179, maxColorValue = 255),
+
+
+  # Priority areas
+  "Land-based Protected Areas" = rgb(0, 60, 0, maxColorValue = 255),
+  "Marine Protected Areas" = rgb(0, 38, 115, maxColorValue = 255),
+  "Critical Biodiversity Areas" = rgb(67, 128, 0, maxColorValue = 255),
+  "Ecologically Sensitive Areas" = rgb(168, 168, 0, maxColorValue = 255),
+
+  # Built up areas
+  "Cropland"= rgb(0, 0, 0, maxColorValue = 255),
+  "Plantation"= rgb(0, 0, 0, maxColorValue = 255),
+  "Built up"= rgb(0, 0, 0, maxColorValue = 255),
+  "Mine"= rgb(0, 0, 0, maxColorValue = 255),
+  "Artificial waterbody" = rgb(0, 0, 0, maxColorValue = 255)
+
+)
+
+```
+
+```{r}
+#| echo: false
+#| message: true
+#| warning: true
+library(grid)
+library(gridExtra)
+library(ggplot2)
+##recreate condition table
+NBA_tbl_colr <- function(DF, COL) {
+
+color_cell <- function(COL) {
+
+    color <- NBA_colours[match(COL, names(NBA_colours))]
+
+    html <- paste0(
+      '<div style="background-color:', color, '; color: black; padding: 5px;">',
+      COL, '</div>'
+    )
+
+    return(html)
+  }
+
+  # Apply the HTML function to the Status column
+  DF_col <- DF %>%
+    dplyr::mutate(across({{COL}}, color_cell))
+
+  table <- kableExtra::kable(DF_col, "html", escape = FALSE) %>%
+    kableExtra::kable_styling(
+      bootstrap_options = c("striped", "hover"),
+      full_width = FALSE,
+      position = "center",
+      font_size = 12
+    ) %>%
+    kableExtra::column_spec(1:ncol(DF_col), border_left = TRUE, border_right = TRUE, background = "white") %>%
+    kableExtra::add_header_above(c(" " = ncol(DF_col)), line = TRUE, line_sep = 3, color = "black")%>%
+    kableExtra::row_spec(0, background = "#899be1", color = "black", bold = TRUE, extra_css = "border: 1px solid black")
+  table
+
+}
+
+cond_tbl <- read.csv(
+  dir(here::here("data"),
+      "condition_table.csv",
+      full.names = T,
+      recursive = T))
+
+cond_tbl
+
+test <- NBA_tbl_colr(cond_tbl, 2:7)
+test
+
+png("mask.png")
+grid.polygon(c(-0.06, 0.06, 0.06, 0.15, 0, -0.15, -0.06),
+             c(-5, -5, 2.5, 2, 5, 2, 2.5), gp=gpar(fill="black"),
+             def="native",
+             vp=viewport(xs=c(-0.15, 0.15), ys=c(-5, 5)))
+dev.off()
+
+
+library(png)
+m <- readPNG("mask.png", native=FALSE)
+mask <- matrix(rgb(m[,,1],m[,,2],m[,,3]),
+               nrow=nrow(m))
+
+rmat <- matrix(rgb(colorRamp(c(rgb(110, 159, 212, maxColorValue = 255),rgb(165, 197, 199, maxColorValue = 255),rgb(136, 129, 78, maxColorValue = 255)))(seq(0,1,length=nrow(m))), maxColorValue=255),
+               nrow=nrow(m), ncol=ncol(m))
+
+
+# Create a rasterGrob (from a matrix or raster image)
+r_grob <- rasterGrob(rmat, width = unit(0.1, "npc"), height = unit(15, "npc"),interpolate = TRUE,
+  vp = viewport(angle = 90))  # Rotate 90 degrees
+
+# Create text grob — you can position it with x/y in [0,1]
+label <- textGrob(
+  "Decreasing ecosystem function and increasing ecosystem restoration cost",
+  x = 0.5, y = 0.5,
+  gp = gpar(col = "black", fontsize = 14, fontface = "bold")
+)
+
+# Combine all in grobTree
+combined_grob <- grobTree(r_grob, label)
+
+# Display
+grid.newpage()
+grid.arrange(combined_grob, ncol = 1, heights = c(1, 2))
+
+
+
+```
+
+
+
+
+

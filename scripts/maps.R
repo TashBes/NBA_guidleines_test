@@ -374,8 +374,235 @@ ggsave("outputs/threat_status_map_benthic.png", plot= benth_threat_map,  bg = "w
 
 
 #####################################################################################
+##map rasters with polygons
+##turn raster into tibble
+gplot_data <- function(x, maxpixels = 50000)  {
+  x <- raster::sampleRegular(x, maxpixels, asRaster = TRUE)
+  coords <- raster::xyFromCell(x, seq_len(raster::ncell(x)))
+  ## Extract values
+  dat <- utils::stack(as.data.frame(raster::getValues(x)))
+  names(dat) <- c('value', 'variable')
+
+  dat <- tibble::as_tibble(data.frame(coords, dat))
+
+  if (!is.null(levels(x))) {
+    dat <- dplyr::left_join(dat, levels(x)[[1]],
+                            by = c("value" = "ID"))
+  }
+  dat
+}
 
 
+##load data
+rast <- raster::raster(
+  dir("data",
+      "^Mining Footprint.tif$",
+      full.names = T,
+      recursive = T))
+
+rast <- terra::rast(
+  dir("data",
+      "^Mining Footprint.tif$",
+      full.names = T,
+      recursive = T))
+
+
+
+
+poly <- NBA.package::NBA_example_map_data %>%
+  sf::st_transform(crs = sf::st_crs(rast))
+
+
+cum_pres <- gplot_data(rast)
+
+
+#########
+##plot in ggplot
+########
+library(ggplot2)
+
+ggplot() +
+  geom_tile(data = cum_pres,
+            aes(x = x, y = y, fill = value)) +
+  geom_sf(data = poly, fill = NA) +
+  scale_fill_gradient("Pressure",
+                      low = 'green', high = 'red',
+                      na.value = NA)
+
+ggplot() +
+  tidyterra::geom_spatraster(data = rast) +
+  geom_sf(data = poly, fill = NA) +
+  scale_fill_gradient("Pressure",
+                      low = 'green', high = 'red',
+                      na.value = NA)
+
+
+
+
+
+##############################################################################
+## recreate mem style file
+library(xml2)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+library(sf)
+library(ggpattern)
+
+
+mem_2025 <- sf::st_read(
+  dir("data",
+      "^Marine_Ecosystem_Map_2025_interim.gpkg$",
+      full.names = T,
+      recursive = T))
+mem_2025
+
+
+
+qml <- read_xml(dir("data",
+                    "^Marine_Ecosystem_Map_2025_benthic.qml$",
+                    full.names = T,
+                    recursive = T))
+qml
+
+
+rules <- xml_find_all(qml, ".//rule")
+
+rule_data <- tibble(
+  name = xml_attr(rules, "symbol"),  # symbol ID
+  B_EcosysType = xml_attr(rules, "label")
+)
+
+# Remove "<all other values>" if it’s a placeholder
+rule_data <- filter(rule_data, B_EcosysType != "<all other values>")
+
+symbols_raw <- xml_find_all(qml, ".//symbol")
+symbols_raw
+
+
+# Extract relevant data from each symbol
+symbol_data <- map_df(symbols_raw, function(sym) {
+  type <- xml_attr(sym, "type")
+  name <- xml_attr(sym, "name")
+
+  # Extract first layer node
+  layer <- xml_find_first(sym, ".//layer")
+  class <- xml_attr(layer, "class")
+
+  # Extract all style options under the layer
+  options <- xml_find_all(layer, ".//Option")
+  option_list <- map_chr(options, ~ paste(xml_attr(.x, "name"), xml_attr(.x, "value"), sep = "="))
+
+  tibble(
+    name = name,
+    type = type,
+    class = class,
+    style = paste(option_list, collapse = "; ")
+  )
+})
+
+symbol_styles <- left_join(rule_data, symbol_data, by = "name")
+symbol_styles
+
+# Extract hex color codes for SimpleFill types
+SimpleFill <- symbol_styles %>%
+  mutate(
+    fill_color = str_extract(style, "color=\\d+,\\d+,\\d+,\\d+"),
+    fill_color = str_remove(fill_color, "color=")
+  )%>%
+  filter(class == "SimpleFill" & !is.na(fill_color))%>%
+  mutate(
+    hex = str_split(fill_color, ",", simplify = TRUE),
+    hex = rgb(
+      red   = as.numeric(hex[,1])/255,
+      green = as.numeric(hex[,2])/255,
+      blue  = as.numeric(hex[,3])/255,
+      alpha = as.numeric(hex[,4])/255
+    )
+  )
+SimpleFill
+
+# Extract hex color codes for SimpleLine types
+SimpleLine <- symbol_styles %>%
+  mutate(
+    fill_color = str_extract(style, "line_color=\\d+,\\d+,\\d+,\\d+"),
+    fill_color = str_remove(fill_color, "line_color=")
+  )%>%
+  filter(class == "LinePatternFill" & !is.na(fill_color))%>%
+  mutate(
+    hex = str_split(fill_color, ",", simplify = TRUE),
+    hex = rgb(
+      red   = as.numeric(hex[,1])/255,
+      green = as.numeric(hex[,2])/255,
+      blue  = as.numeric(hex[,3])/255,
+      alpha = as.numeric(hex[,4])/255
+    )
+  )
+SimpleLine
+
+symbol_styles <- SimpleFill %>%
+  bind_rows(SimpleLine)
+symbol_styles
+
+# Join your symbol styles to your spatial data
+shp <- left_join(mem_2025, symbol_styles, by = "B_EcosysType")
+
+#3. Split data by class
+simple_fill <- shp %>% filter(class == "SimpleFill")
+line_pattern <- shp %>% filter(class == "LinePatternFill")
+
+# Now plot with ggplot2
+ggplot(shp) +
+  geom_sf(aes(fill = hex), color = NA) +
+  scale_fill_identity() +
+  theme_minimal()
+
+
+ggplot() +
+  # Simple solid fill polygons
+#  geom_sf(data = simple_fill, aes(fill = hex), color = NA) +
+
+  # Line pattern polygons
+  geom_sf_pattern(
+    data = line_pattern,
+    aes(pattern_colour = hex),
+    pattern = "stripe",
+    pattern_fill = NA,        # transparent base fill
+    pattern_density = 0.5,
+    pattern_spacing = 0.05,
+    pattern_angle = 45,
+    pattern_size = 0.2,
+    fill = NA,                # no base fill
+    color = NA                # no border
+  ) +
+
+  # Use colors as-is
+  scale_fill_identity() +
+  scale_pattern_colour_identity() +
+
+  theme_minimal()
+
+
+
+
+ggsave("outputs/Marine_Ecosystem_Map_2025_interim.png",height = 10, width = 16, units = 'cm',  bg = "white")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+####################################################################################
 
 
 ## install if needed (do this exactly once):

@@ -78,6 +78,12 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
               "Mine",
               "Artificial waterbody")
 
+  threat_color_mapping <- c("Critically Endangered" = rgb(216, 30, 5, maxColorValue = 255),
+                            "Endangered" = rgb(252, 127, 63, maxColorValue = 255),
+                            "Vulnerable" = rgb(249, 232, 20, maxColorValue = 255),
+                            "Near Threatened" = rgb(0, 0, 0, maxColorValue = 255),
+                            "Least Concern" = rgb(180, 215, 158, maxColorValue = 255))
+
   if(CHRT == "donut"){
 
     if(GRP == FALSE) {
@@ -101,7 +107,7 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
           #ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
           ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
           ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          ggplot2::scale_fill_manual(values = threat_color_mapping) +
           #ggplot2::ggtitle(LAB)+
           ggplot2::labs(fill = "", title = LAB) + #this is the legend label
           ggplot2::theme_void() + ## removes the lines around chart and grey background
@@ -122,7 +128,7 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
           ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 5) +  ## Add this line to include count values
           ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
           ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          ggplot2::scale_fill_manual(values = threat_color_mapping) +
           ggplot2::labs(fill = "", title = LAB)+
           #ggplot2::xlab(LAB)+
           ggplot2::theme_void() + ## removes the lines around chart and grey background
@@ -157,7 +163,7 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
           #ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
           ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
           ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          ggplot2::scale_fill_manual(values = threat_color_mapping) +
           ggplot2::labs(fill = "", title = LAB)+
           #ggplot2::xlab(LAB)+
           ggplot2::theme_void() + ## removes the lines around chart and grey background
@@ -178,7 +184,7 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
           ggplot2::geom_text(aes(x = 3.5, y = (ymin + ymax) / 2, label = COUNT), color = "black", size = 3) +  ## Add this line to include count values
           ggplot2::coord_polar(theta = "y") + ## convert to polar coordinates
           ggplot2::xlim(c(2, 4)) + ## limit x-axis to create a donut chart
-          ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
+          ggplot2::scale_fill_manual(values = threat_color_mapping) +
           ggplot2::labs(fill = "", title = LAB)+
           #ggplot2::xlab(LAB)+
           ggplot2::theme_void() + ## removes the lines around chart and grey background
@@ -219,7 +225,7 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
                            size = 3,
                            color = "black",
                            show.legend = FALSE) + # adjust size of labels with no legend being shown
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks)+  # order the colours of the bars in the reversed order
+        ggplot2::scale_fill_manual(values = threat_color_mapping)+  # order the colours of the bars in the reversed order
         ggplot2::ylab({{LAB}}) +
         ggplot2::xlab("") + ## remove the heading for the y-axis
         ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
@@ -241,7 +247,7 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
 
       plot <- ggplot2::ggplot(dat, aes(y = PERCENTAGE, x = factor({{GROUPS}}, level = ord), fill = FILL)) +
         ggplot2::geom_bar(stat = "identity", position =  position_stack(reverse = TRUE), width = 0.5) + # change width of bars
-        ggplot2::scale_fill_manual(values = cols, breaks = breaks) +  # order the colours of the bars in the reversed order
+        ggplot2::scale_fill_manual(values = threat_color_mapping) +  # order the colours of the bars in the reversed order
         ggplot2::ylab({{LAB}}) +
         ggplot2::xlab("") + ## remove the heading for the y-axis
         ggplot2::guides(fill = guide_legend(reverse = F, nrow = 1, size = 0.5)) +  # display legend in 2 rows
@@ -267,23 +273,22 @@ test <- function(DF, GROUPS, COLS, CHRT = c("bar", "donut"), NUM = FALSE, LAB, G
 
 }
 
-Fig99mapinset <- read_excel(
+Fig1a_graph <- read_excel(
   dir("data",
-      "Fig99mapinset_graph.xlsx",
+      "Fig1a_graph.xlsx",
       full.names = T,
       recursive = T))%>%
   slice_head(n =8)%>%
   mutate(across(2:5, as.numeric)) %>%
   select(1:5)
 
-test(Fig99mapinset,
+test(Fig1a_graph,
      `OVERALL types`,
      COLS = 2:5,
      NUM = F,
      GRP = F,
-     CHRT = "donut",
-     LAB = "Protection level",
-     SAVE = "Fig99mapinset")
+     CHRT = "bar",
+     LAB = "Threat status")
 
 #############################################################################
 ##try with marine
