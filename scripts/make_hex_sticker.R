@@ -47,7 +47,7 @@ sticker(
 sanbi_img <- image_read('SANBI_logo.png')
 
 sticker(subplot = sanbi_img,
-        package = "NBA.package",
+        package = "nbaR",
         p_y = 1.7,       s_width = 1.2,
         s_height = 1.2,
         s_x = 1,

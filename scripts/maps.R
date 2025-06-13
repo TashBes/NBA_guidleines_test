@@ -33,11 +33,13 @@ NBA_map <-function(DF, COLS, GEOM, CAP, FILL){
 
 
 
-  dat <- DF %>%
-    group_by(pick({{COLS}}))%>%
-    summarise(geometry = st_union({{GEOM}})) %>%
-    filter(st_geometry_type(geometry) %in% c("POLYGON", "MULTIPOLYGON")) %>%
-    ungroup()
+  # dat <- DF %>%
+  #   group_by(pick({{COLS}}))%>%
+  #   summarise(geometry = st_union({{GEOM}})) %>%
+  #   filter(st_geometry_type(geometry) %in% c("POLYGON", "MULTIPOLYGON")) %>%
+  #   ungroup()
+
+  dat <- DF
 
 
 
@@ -99,7 +101,7 @@ NBA_map <-function(DF, COLS, GEOM, CAP, FILL){
 
     geom_sf(data = dat,
             aes(fill = {{FILL}}),
-            color = "grey",
+            color = NA,
             lwd = 0.1) +  # plot protection level and separate each protectipn level category in grey boundaries
 
     ggplot2::scale_fill_manual(values = cols, breaks = breaks) +
@@ -138,11 +140,19 @@ NBA_map <-function(DF, COLS, GEOM, CAP, FILL){
 
 ######################################################################################
 
-test <- NBA_map(mem,
+test <- NBA_map(mem_crs,
                 c(ecosystem_type, protection_level_30, threat_status, eco_poly_colour),
                 geometry,
                 "Figure 1. Map of the distribution of the ecosystems threat status",
                 threat_status)
+
+test
+
+test <- NBA_map(mem_crs,
+                c(B_EcosysType, B_PolyCol),
+                geom,
+                "Figure 1. Map of the distribution of the ecosystems threat status",
+                B_PolyCol)
 
 test
 

@@ -20,8 +20,12 @@ library(readxl)
 library(NBA.package)
 library("cowplot")
 
-#devtools::install_github("TashBes/NBA.package")
-
+# if (!require("devtools")) install.packages("devtools")
+#devtools::install_github("SANBI-NBA/nbaR")
+#
+# if (!require("learnr")) install.packages("learnr")
+#  learnr::run_tutorial("nba_package_tutorial", package = "nbaR")
+# nbaR::nba_init_quarto_docs()
 #####################################################################################
 ### functions
 
@@ -254,6 +258,8 @@ NBA_theme <- function() {
 #####################################################################################
 ###
 ### fig 1.a
+library(tidyverse)
+library(readxl)
 
 Fig1a <- read_excel(
       dir("data",
@@ -264,7 +270,7 @@ Fig1a <- read_excel(
   mutate(across(2:6, as.numeric))
 
 
-NBA.package::NBA_plot(Fig1a,
+nbaR::nba_plot(Fig1a,
                       `OVERALL types`,
                       2:5,
                       CHRT = "bar",
@@ -1591,6 +1597,23 @@ basic_tbl(Table3)
 
 
 
+#########################
+#diwedine problem
+
+bird <- read_excel(
+  dir("data",
+      "birds_test.xlsx",
+      full.names = T,
+      recursive = T))
+
+nba_plot_bubble(bird,
+                taxon_group,
+                pressure,
+                sub_pressure,
+                perc_concern_under_press)
+NBA_colours
+
+bird$pressure
 #####################################################################################
 ### unload packages
 
