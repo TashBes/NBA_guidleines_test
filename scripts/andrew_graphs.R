@@ -17,11 +17,11 @@
 
 require(tidyverse)
 library(readxl)
-library(NBA.package)
+library(nbaR)
 library("cowplot")
 
 # if (!require("devtools")) install.packages("devtools")
-#devtools::install_github("SANBI-NBA/nbaR")
+#devtools::install_github("SANBI-NBA/nbaR", force = TRUE)
 #
 # if (!require("learnr")) install.packages("learnr")
 #  learnr::run_tutorial("nba_package_tutorial", package = "nbaR")
@@ -269,14 +269,44 @@ Fig1a <- read_excel(
   slice_head(n =8) %>%
   mutate(across(2:6, as.numeric))
 
+test <- Fig1a %>%
+  pivot_longer(cols = 2:5, names_to = "threat_status")
 
-nbaR::nba_plot(Fig1a,
+color <- nbaR::NBA_colours[match(test$threat_status, names(nbaR::NBA_colours))]
+
+
+
+
+
+test <- nbaR::nba_plot(Fig1a,
                       `OVERALL types`,
                       2:5,
                       CHRT = "bar",
                       NUM = TRUE,
                       LAB = "Percentage of ecosystem types",
-                      SAVE = "Fig1a")
+                      SAVE = "Fig1a_PACKAGE",
+                      SCALE_TEXT = 0.2)
+
+
+test <- bar_plot_test(Fig1a,
+                       `OVERALL types`,
+                       2:5,
+                       CHRT = "bar",
+                       NUM = TRUE,
+                       LAB = "Percentage of ecosystem types",
+                       SAVE = "Fig1a_TEST",
+                      SCALE_TEXT = 0.4)
+
+
+test
+
+ggsave(
+  filename = "outputs/epl24_bar_plot.jpeg", # File name
+  plot = test, # Plot object
+  device = "jpeg", # File format
+  width = 8, height = 6, units = "cm", # Dimensions
+  dpi = 300 # Resolution
+)
 
 test(Fig1a,
      `OVERALL types`,
@@ -300,7 +330,7 @@ Fig1b <- read_excel(
   pivot_wider(names_from = `Red List Category`)
 
 
-NBA_plot(Fig1b,
+nbaR::nba_plot(Fig1b,
      OVERALL_types,
      2:5,
      CHRT = "bar",
@@ -311,7 +341,7 @@ NBA_plot(Fig1b,
 ### fig 1.c
 
 Fig1c <- read_excel(
-  dir("data",
+  dir(path = "data",
       "Fig1c_graph updated.xlsx",
       full.names = T,
       recursive = T))%>%
@@ -319,7 +349,7 @@ Fig1c <- read_excel(
   mutate(across(2:5, as.numeric))
 
 
-NBA_plot(Fig1c,
+nbaR::nba_plot(Fig1c,
      `OVERALL types`,
      2:5,
      CHRT = "bar",
@@ -1611,9 +1641,159 @@ nba_plot_bubble(bird,
                 pressure,
                 sub_pressure,
                 perc_concern_under_press)
-NBA_colours
+nbaR::NBA_colours
 
 bird$pressure
+
+# Create a named color palette for pressures
+cat <- bird %>%
+  dplyr::select(pressure) %>%
+  unique() %>%
+  as.data.frame()
+cat <- cat[,1]
+
+
+
+
+# Subset nbaR::NBA_colours using names that match the values in pressures
+subset_colours <- nbaR::NBA_colours[match(cat, names(nbaR::NBA_colours))]
+
+
+# Ensure pressure is a factor with correct levels
+bird1  <- bird %>%
+  mutate(pressure = factor(pressure, levels = names(subset_colours)))
+
+
+# Create strip background and text style lists
+strip_bg <- lapply(subset_colours, function(col) element_rect(fill = col, colour = col))
+strip_text <- lapply(subset_colours, function(col) element_text(colour = "white"))  # or custom color
+
+
+# Build strip object
+my_strips <- ggh4x::strip_themed(
+  background_y = strip_bg,
+  text_y = strip_text
+)
+
+
+p <- bird1 %>%
+  ggplot2::ggplot(ggplot2::aes(taxon_group, sub_pressure, size = perc_concern_under_press,
+                               fill = pressure, colour = pressure)) +
+  ggplot2::geom_point(shape = 21) +
+  ggplot2::geom_text(ggplot2::aes(label = perc_concern_under_press),
+                     parse = TRUE,
+                     size = 2,
+                     colour = "white") +
+  ggh4x::facet_grid2(
+    pressure ~ ., scales = "free", space = "free",
+    labeller = ggplot2::labeller(pressure = ggplot2::label_wrap_gen(width = 20)),
+    strip = my_strips
+  ) +
+  ggplot2::scale_size(range = c(3, 15)) +
+  ggplot2::scale_x_discrete(position = "top", guide = ggplot2::guide_axis(n.dodge = 2)) +
+  ggplot2::scale_fill_manual(values = nbaR::NBA_colours) +
+  ggplot2::scale_colour_manual(values = nbaR::NBA_colours) +
+  ggplot2::ylab("") +
+  ggplot2::xlab("") +
+  ggplot2::theme(
+    legend.position = "none",
+    panel.background = ggplot2::element_blank(),
+    panel.spacing = ggplot2::unit(0, "cm"),
+    strip.text.y = ggplot2::element_text(angle = 0),
+    panel.grid.major.y = ggplot2::element_line(colour = "lightgrey"),
+    panel.grid.major.x = ggplot2::element_line(colour = "lightgrey"),
+    axis.ticks.y = ggplot2::element_blank(),
+    axis.line.y = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"),
+    axis.line.x = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"))
+
+
+
+p
+
+
+function_test <- function(DF, GROUP, CAT, SUB_CAT, VALUE, SAVE = NULL){
+
+
+
+  # Create a named color palette for pressures
+  cat <- DF %>%
+    dplyr::select({{CAT}}) %>%
+    unique() %>%
+    as.data.frame()
+  cat <- cat[,1]
+
+  # Subset nbaR::NBA_colours using names that match the values in pressures
+  subset_colours <- nbaR::NBA_colours[match(cat, names(nbaR::NBA_colours))]
+
+  # Ensure pressure is a factor with correct levels
+  DF  <- DF %>%
+    mutate(pressure = factor(pressure, levels = names(subset_colours)))
+
+  # Now get levels in order
+  cat <- DF %>%
+    dplyr::select(pressure) %>%
+    unique() %>%
+    as.data.frame()
+  cat <- cat[,1]
+
+  # Create strip background and text style lists
+  strip_bg <- lapply(subset_colours, function(col) element_rect(fill = col, colour = col))
+  strip_text <- lapply(subset_colours, function(col) element_text(colour = "white"))  # or custom color
+
+
+  # Build strip object
+  my_strips <- ggh4x::strip_themed(
+    background_y = strip_bg,
+    text_y = strip_text
+  )
+
+
+  p <- DF %>%
+    ggplot2::ggplot(ggplot2::aes({{GROUP}}, {{SUB_CAT}}, size = {{VALUE}},
+                                 fill = {{CAT}}, colour = {{CAT}})) +
+    ggplot2::geom_point(shape = 21) +
+    ggplot2::geom_text(ggplot2::aes(label = {{VALUE}}),
+                       parse = TRUE,
+                       size = 2,
+                       colour = "white") +
+    ggh4x::facet_grid2(
+      pressure ~ ., scales = "free", space = "free",
+      labeller = ggplot2::labeller(pressure = ggplot2::label_wrap_gen(width = 20)),
+      strip = my_strips
+    ) +
+    ggplot2::scale_size(range = c(.1, 15)) +
+    ggplot2::scale_x_discrete(position = "top", guide = ggplot2::guide_axis(n.dodge = 2)) +
+    ggplot2::scale_fill_manual(values = nbaR::NBA_colours) +
+    ggplot2::scale_colour_manual(values = nbaR::NBA_colours) +
+    ggplot2::ylab("") +
+    ggplot2::xlab("") +
+    ggplot2::theme(
+      legend.position = "none",
+      panel.background = ggplot2::element_blank(),
+      panel.spacing = ggplot2::unit(0, "cm"),
+      strip.text.y = ggplot2::element_text(angle = 0),
+      panel.grid.major.y = ggplot2::element_line(colour = "lightgrey"),
+      panel.grid.major.x = ggplot2::element_line(colour = "lightgrey"),
+      axis.ticks.y = ggplot2::element_blank(),
+      axis.line.y = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"),
+      axis.line.x = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"))
+
+
+
+  if(!is.null(SAVE)){
+
+    ggplot2::ggsave(paste0("outputs/", SAVE, ".png"), plot = p, height = 10, width = 16, units = 'cm', dpi = 300, create.dir = TRUE)
+
+
+  }
+  p
+}
+
+function_test(bird,
+                taxon_group,
+                pressure,
+                sub_pressure,
+                perc_concern_under_press)
 #####################################################################################
 ### unload packages
 
