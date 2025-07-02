@@ -765,27 +765,16 @@ test_tabl_func <- function(DF, COL, HEADER_COL = c("sanbi-green",
                                                    "Genetics",
                                                    "PEI")) {
 
-  header_col <- nbaR::NBA_colours[match(HEADER_COL, names(nbaR::NBA_colours))]
+header_col <- nbaR::NBA_colours[match(HEADER_COL, names(nbaR::NBA_colours))]
+
+df_coloured <- DF %>%
+  mutate({{COL}} := kableExtra::cell_spec({{COL}}, background = nbaR::NBA_colours[{{COL}}],
+                                          color = "black",
+                                          extra_css = "margin: -8px; padding: 8px; display: flex;"))
 
 
-  color_cell <- function(COL) {
-
-    color <- nbaR::NBA_colours[match(COL, names(nbaR::NBA_colours))]
-
-    html <- paste0(
-      '<div style="background-color:', color, '; color: black;"margin: -8px; padding: 8px; display: flex;">',
-      COL, '</div>'
-    )
-
-    return(html)
-  }
-
-
-  # Apply the HTML function to the Status column
-  DF_col <- DF %>%
-    dplyr::mutate({{COL}} := sapply({{COL}}, color_cell))
-
-  table <- kableExtra::kable(DF_col, "html", escape = FALSE) %>%
+  table <- df_coloured %>%
+    kableExtra::kable("html", escape = FALSE) %>%
     kableExtra::kable_styling(
       bootstrap_options = c("striped", "hover"),
       full_width = FALSE,
@@ -799,20 +788,295 @@ test_tabl_func <- function(DF, COL, HEADER_COL = c("sanbi-green",
 
 }
 
-DF_col <- DF %>%
-  dplyr::mutate({{COL}} := sapply({{COL}}, color_cell))
 
-table <- kableExtra::kable(DF_col, "html", escape = FALSE) %>%
-  kableExtra::kable_styling(
-    bootstrap_options = c("striped", "hover"),
-    full_width = FALSE,
-    position = "center",
-    font_size = 12
-  ) %>%
-  kableExtra::column_spec(1:ncol(DF_col), border_left = TRUE, border_right = TRUE, background = "white") %>%
-  kableExtra::add_header_above(c(" " = ncol(DF_col)), line = TRUE, line_sep = 3, color = "black")%>%
-  kableExtra::row_spec(0, background = header_col, color = "black", bold = TRUE, extra_css = "border: 1px solid black")
-table
+test_tabl_func_gt <- function(DF, COL, HEADER_COL = c("sanbi-green",
+                                                      "sanbi-orange",
+                                                      "sanbi-purple",
+                                                      "Freshwater",
+                                                      "Marine",
+                                                      "Coast",
+                                                      "Estuarine",
+                                                      "Terrestrial",
+                                                      "Genetics",
+                                                      "PEI")) {
+
+  # Capture column name as string
+  col_name <- rlang::as_name(enquo(COL))
+
+  # Extract header colors from nbaR palette
+  header_col <- nbaR::NBA_colours[match(HEADER_COL, names(nbaR::NBA_colours))]
+
+  # Extract colors for cell values in the target column
+  value_colors <- nbaR::NBA_colours[DF[[col_name]]]
+
+  # last row
+  last_row <- nrow(DF)
+
+  # Build the gt table
+  gt_tbl <- DF %>%
+    gt::gt() %>%
+    # Color the entire column cells by matching their values to the palette
+    gt::data_color(
+      columns = tidyselect::all_of(col_name),
+      colors = scales::col_factor(
+        palette = value_colors,
+        domain = DF[[col_name]]
+      )
+    ) %>%
+    # Style the header row background colors according to header_col vector
+    gt::tab_style(
+      style = list(
+        gt::cell_fill(color = header_col[1]),
+        gt::cell_text(weight = "bold", color = "black")
+      ),
+      locations = gt::cells_column_labels(columns = tidyselect::everything())
+    ) %>%
+    # Center the table
+    gt::tab_options(table.align = "center") %>%
+    # 1. Header shading and borders
+    gt::tab_style(
+      style = list(
+        gt::cell_borders(
+          sides = c("top", "bottom"),
+          color = "black",
+          weight = gt::px(2),
+          style = "solid"
+        ),
+        gt::cell_borders(
+          sides = c("left", "right"),
+          color = "lightgray"
+        ),
+        gt::cell_text(weight = "bold")
+      ),
+      locations = gt::cells_column_labels()
+    ) %>%
+
+    # 2. Data row borders (dotted top and bottom, no vertical)
+    gt::tab_style(
+      style = gt::cell_borders(
+        sides = c("top", "bottom"),
+        color = "gray50",
+        weight = gt::px(1),
+        style = "dotted"
+      ),
+      locations = gt::cells_body()
+    ) %>%
+
+    # 3. Remove all vertical borders
+    gt::tab_style(
+      style = gt::cell_borders(
+        sides = c("left", "right"),
+        color = "transparent"
+      ),
+      locations = gt::cells_body()
+    ) %>%
+
+    # 4. Bottom border for whole table
+    gt::tab_style(
+      style = gt::cell_borders(
+        sides = "bottom",
+        color = "black",
+        weight = gt::px(2),
+        style = "solid"
+      ),
+      locations = gt::cells_body(rows = last_row)  # last row only
+    )
+
+  return(gt_tbl)
+}
+
+plot_RLI <- function(DF, YEAR, RLI, MIN, MAX, GROUP = NULL, summarise_by_year = TRUE, SAVE = NULL) {
+  # Convert column names to symbols (quosures)
+  YEAR <- enquo(YEAR)
+  RLI <- enquo(RLI)
+  MIN <- enquo(MIN)
+  MAX <- enquo(MAX)
+  GROUP <- enquo(GROUP)
+
+  # Summarisation
+  if (summarise_by_year && rlang::quo_is_null(GROUP)) {
+    DF <- DF %>%
+      group_by(!!YEAR) %>%
+      summarise(
+        !!MIN := mean(!!MIN, na.rm = TRUE),
+        !!MAX := mean(!!MAX, na.rm = TRUE),
+        !!RLI := mean(!!RLI, na.rm = TRUE),
+        .groups = "drop"
+      )
+  }
+
+  # Base plot
+  p <- ggplot(DF, aes(x = !!YEAR, y = !!RLI))
+
+  # Add layers based on grouping
+  if (rlang::quo_is_null(GROUP)) {
+    p <- p +
+      geom_line() +
+      geom_ribbon(aes(ymin = !!MIN, ymax = !!MAX), alpha = 0.3, colour = NA)
+  } else {
+    p <- p +
+      geom_line(aes(group = !!GROUP, color = !!GROUP), linetype = "dashed") +
+      geom_ribbon(aes(ymin = !!MIN, ymax = !!MAX, group = !!GROUP), fill = "grey", alpha = 0.2, colour = NA)
+  }
+
+  # Finalize plot
+  p <- p + theme_classic() + ylim(0.7, 1)
+
+  # Optional: save to file if SAVE is provided
+  if (!is.null(SAVE)) {
+    ggsave(filename = paste0("outputs/", SAVE, ".png"),
+           plot = p,
+           height = 10, width = 16, units = "cm", dpi = 300)
+  }
+
+  p
+}
+
+
+#####################################################
+## bubble plots
+
+
+plot_bubble <- function(DF, GROUP, CAT, SUB_CAT, VALUE, SAVE = NULL){
+
+
+
+if(!is.null(SUB_CAT)){
+  # Create a named color palette for pressures
+  cat <- DF %>%
+    dplyr::select({{CAT}}) %>%
+    unique() %>%
+    as.data.frame()
+  cat <- cat[,1]
+
+  # Subset nbaR::NBA_colours using names that match the values in pressures
+  subset_colours <- nbaR::NBA_colours[match(cat, names(nbaR::NBA_colours))]
+
+  # Ensure pressure is a factor with correct levels
+  DF  <- DF %>%
+    mutate(pressure = factor(pressure, levels = names(subset_colours)))
+
+
+
+  # Create strip background and text style lists
+  strip_bg <- lapply(subset_colours, function(col) element_rect(fill = col, colour = col))
+  strip_text <- lapply(subset_colours, function(col) element_text(colour = "white"))  # or custom color
+
+
+  # Build strip object
+  my_strips <- ggh4x::strip_themed(
+    background_y = strip_bg,
+    text_y = strip_text
+  )
+
+
+  p <- DF %>%
+    ggplot2::ggplot(ggplot2::aes({{GROUP}}, {{SUB_CAT}}, size = {{VALUE}},
+                                 fill = {{CAT}}, colour = {{CAT}})) +
+    ggplot2::geom_point(shape = 21) +
+    ggplot2::geom_text(ggplot2::aes(label = {{VALUE}}),
+                       parse = TRUE,
+                       size = 2,
+                       colour = "white") +
+    ggh4x::facet_grid2(
+      pressure ~ ., scales = "free", space = "free",
+      labeller = ggplot2::labeller(pressure = ggplot2::label_wrap_gen(width = 20)),
+      strip = my_strips
+    ) +
+    ggplot2::scale_size(range = c(3, 15)) +
+    ggplot2::scale_x_discrete(position = "top", guide = ggplot2::guide_axis(n.dodge = 2)) +
+    ggplot2::scale_fill_manual(values = nbaR::NBA_colours) +
+    ggplot2::scale_colour_manual(values = nbaR::NBA_colours) +
+    ggplot2::ylab("") +
+    ggplot2::xlab("") +
+    ggplot2::theme(
+      legend.position = "none",
+      panel.background = ggplot2::element_blank(),
+      panel.spacing = ggplot2::unit(0, "cm"),
+      strip.text.y = ggplot2::element_text(angle = 0),
+      panel.grid.major.y = ggplot2::element_line(colour = "lightgrey"),
+      panel.grid.major.x = ggplot2::element_line(colour = "lightgrey"),
+      axis.ticks.y = ggplot2::element_blank(),
+      axis.line.y = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"),
+      axis.line.x = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"))
+}
+  else
+  {
+
+
+    # Create a named color palette for pressures
+    cat <- DF %>%
+      dplyr::select({{CAT}}) %>%
+      unique() %>%
+      as.data.frame()
+    cat <- cat[,1]
+
+    # Subset nbaR::NBA_colours using names that match the values in pressures
+    subset_colours <- nbaR::NBA_colours[match(cat, names(nbaR::NBA_colours))]
+
+    # Ensure pressure is a factor with correct levels
+    DF  <- DF %>%
+      mutate(pressure = factor(pressure, levels = names(subset_colours)))
+
+
+    p <- DF %>%
+      ggplot2::ggplot(ggplot2::aes({{GROUP}}, {{CAT}}, size = {{VALUE}},
+                                   fill = {{CAT}}, colour = {{CAT}})) +
+      ggplot2::geom_point(shape = 21) +
+      ggplot2::geom_text(ggplot2::aes(label = {{VALUE}}),
+                         parse = TRUE,
+                         size = 2,
+                         colour = "white") +
+      ggh4x::facet_grid2(
+        pressure ~ ., scales = "free", space = "free",
+        labeller = ggplot2::labeller(pressure = ggplot2::label_wrap_gen(width = 20)),
+        strip = my_strips
+      ) +
+      ggplot2::scale_size(range = c(3, 15)) +
+      ggplot2::scale_x_discrete(position = "top", guide = ggplot2::guide_axis(n.dodge = 2)) +
+      ggplot2::scale_fill_manual(values = nbaR::NBA_colours) +
+      ggplot2::scale_colour_manual(values = nbaR::NBA_colours) +
+      ggplot2::ylab("") +
+      ggplot2::xlab("") +
+      ggplot2::theme(
+        legend.position = "none",
+        panel.background = ggplot2::element_blank(),
+        panel.spacing = ggplot2::unit(0, "cm"),
+        strip.text.y = ggplot2::element_text(angle = 0),
+        panel.grid.major.y = ggplot2::element_line(colour = "lightgrey"),
+        panel.grid.major.x = ggplot2::element_line(colour = "lightgrey"),
+        axis.ticks.y = ggplot2::element_blank(),
+        axis.line.y = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"),
+        axis.line.x = ggplot2::element_line(size = 0.5, linetype = "solid", colour = "black"))
+
+
+
+  }
+
+
+
+  if(!is.null(SAVE)){
+
+    ggplot2::ggsave(paste0("outputs/", SAVE, ".png"), plot = p, height = 10, width = 16, units = 'cm', dpi = 300, create.dir = TRUE)
+
+
+  }
+  p
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

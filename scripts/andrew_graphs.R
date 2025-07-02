@@ -261,6 +261,14 @@ NBA_theme <- function() {
 library(tidyverse)
 library(readxl)
 
+bubble_plot <- read.csv("data/nba_bubble_plot_example_data.csv")
+
+plot_bubble(bubble_plot,
+            taxon_group,
+            pressure,
+            sub_pressure,
+            perc_concern_under_press)
+
 Fig1a <- read_excel(
       dir("data",
           "Fig1a_graph.xlsx",
@@ -272,10 +280,7 @@ Fig1a <- read_excel(
 test <- Fig1a %>%
   pivot_longer(cols = 2:5, names_to = "threat_status")
 
-color <- nbaR::NBA_colours[match(test$threat_status, names(nbaR::NBA_colours))]
-
-
-
+test_tabl_func_gt(test, threat_status, "Coast")
 
 
 test <- nbaR::nba_plot(Fig1a,
@@ -441,6 +446,8 @@ Fig6 <- read_excel(
       full.names = T,
       recursive = T))%>%
   select(-c(5:6))
+
+plot_RLI(Fig6, Years, RLI, min, max, summarise_by_year = TRUE)
 
 RLI_plot(Fig6, Years, RLI, min, max)
 
